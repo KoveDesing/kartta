@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KARTTA</title>
+<title>KARTTA — Tu restaurante. Ahora tiene sistema.</title>
 <meta name="description" content="KARTTA conecta menú digital, QR, pedidos, cocina, POS, pagos, clientes, inventario, analytics e inteligencia artificial en un solo sistema para restaurantes, cafeterías, bares, pizzerías y food trucks.">
 <link rel="canonical" href="https://kartta.co/">
 <meta property="og:type" content="website">
@@ -380,6 +380,7 @@ footer{background:var(--black);color:#B8B8B8;padding:60px 0 30px;}
 .whatsapp-fab{position:fixed;right:20px;bottom:20px;z-index:390;width:56px;height:56px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;box-shadow:0 16px 32px -12px rgba(255,49,69,.5);transition:transform .2s ease;}
 .whatsapp-fab:hover{transform:scale(1.06);background:var(--red-dim);}
 </style>
+<script type="module" src="firebase-init.js"></script>
 </head>
 <body>
 <a class="whatsapp-fab" href="https://wa.me/573152507850?text=Hola%20Kartta%2C%20vengo%20de%20la%20web%20y%20me%20interesa%20esto" target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
@@ -1121,10 +1122,10 @@ document.addEventListener('DOMContentLoaded', function(){
     function afterAuth(){
       closeAuth();
       var ok = document.createElement('div');
-      ok.textContent = '¡Listo! Tu cuenta de KARTTA está activa.';
+      ok.textContent = '¡Listo! Entrando a tu panel...';
       ok.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:30px;background:#0A0A0A;color:#fff;padding:14px 22px;border-radius:14px;font-size:14px;font-weight:600;z-index:500;box-shadow:0 20px 40px -16px rgba(0,0,0,.5);';
       document.body.appendChild(ok);
-      setTimeout(function(){ ok.remove(); }, 4000);
+      setTimeout(function(){ window.location.href = 'dashboard.html'; }, 900);
     }
 
     authForm.addEventListener('submit', function(e){
