@@ -62,8 +62,8 @@ const FIREBASE_CONFIG = {
   authDomain: "kartta-ba6f2.firebaseapp.com",
   projectId: "kartta-ba6f2",
   storageBucket: "kartta-ba6f2.firebasestorage.app",
-  messagingSenderId: "000000000000",
-  appId: "1:000000000000:web:xxxxxxxxxxxxxxxx",
+  messagingSenderId: "1031500564852",
+  appId: "1:1031500564852:web:347f70f7a8a116610f8421",
 };
 
 const app = initializeApp(FIREBASE_CONFIG);
