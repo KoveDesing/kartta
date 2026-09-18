@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menú — KARTTA</title>
+<meta name="description" content="Menú digital, pide desde tu celular.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --white:#FFFFFF; --black:#0A0A0A; --red:#FF3145;
+  --gray:#777777; --surface:#F5F5F3; --border:#E8E8E6;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:'Inter',-apple-system,sans-serif;background:var(--white);color:var(--black);-webkit-font-smoothing:antialiased;}
+img{max-width:100%;display:block;}
+
+/* ---- estados de carga / error ---- */
+#loading,#errorState{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;}
+#loading .brand{font-family:Georgia,serif;font-style:italic;font-size:24px;}
+#loading .brand b{color:var(--red);font-style:normal;}
+#loading p,#errorState p{font-size:13.5px;color:var(--gray);margin:0;max-width:38ch;}
+#errorState h2{font-size:18px;font-weight:800;margin:0;}
+#errorState{display:none;}
+
+/* ---- shell del menú ---- */
+#menuShell{display:none;max-width:560px;margin:0 auto;padding-bottom:60px;}
+
+.mheader{background:var(--black);color:#fff;padding:26px 20px 22px;position:sticky;top:0;z-index:10;}
+.mheader .row{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.mheader h1{font-size:19px;font-weight:800;margin:0;}
+.mheader .mesa{font-size:11px;font-weight:700;background:var(--red);padding:5px 11px;border-radius:999px;flex-shrink:0;}
+.mheader .tag{font-size:11.5px;color:#9A9A9A;margin-top:4px;}
+
+.mcats{display:flex;gap:8px;overflow-x:auto;padding:14px 16px;position:sticky;top:70px;background:var(--white);z-index:9;border-bottom:1px solid var(--border);scrollbar-width:none;}
+.mcats::-webkit-scrollbar{display:none;}
+.mcat-btn{flex-shrink:0;padding:8px 15px;border-radius:999px;background:var(--surface);color:var(--gray);font-size:12.5px;font-weight:700;border:1px solid var(--border);white-space:nowrap;}
+.mcat-btn.active{background:var(--black);color:#fff;border-color:var(--black);}
+
+.mcat-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--gray);padding:22px 20px 10px;}
+.mitem{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--border);}
+.mitem .name{font-size:15px;font-weight:700;}
+.mitem .cat{font-size:11.5px;color:var(--gray);margin-top:2px;}
+.mitem .price{font-size:14.5px;font-weight:800;white-space:nowrap;}
+.mitem.off{opacity:.4;}
+.mitem.off .price::after{content:" · agotado";font-size:11px;font-weight:600;color:var(--red);}
+
+.mempty{text-align:center;padding:60px 24px;color:var(--gray);font-size:13.5px;}
+
+.mfooter{text-align:center;padding:28px 20px 10px;font-size:11.5px;color:var(--gray);}
+.mfooter a{color:var(--black);font-weight:700;text-decoration:none;}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="brand">Kar<b>tt</b>a</div>
+  <p>Cargando el menú…</p>
+</div>
+
+<div id="errorState">
+  <h2>No encontramos este menú</h2>
+  <p id="errorMsg">Revisa el enlace o pídele al negocio que te comparta el QR de nuevo.</p>
+</div>
+
+<div id="menuShell">
+  <header class="mheader">
+    <div class="row">
+      <div>
+        <h1 id="bizName">—</h1>
+        <div class="tag">Escanea, pide y disfruta.</div>
+      </div>
+      <span class="mesa" id="mesaTag" style="display:none;"></span>
+    </div>
+  </header>
+
+  <nav class="mcats" id="mcats"></nav>
+
+  <div id="mlist"></div>
+
+  <div class="mempty" id="mempty" style="display:none;">Este negocio todavía no ha cargado su menú.</div>
+
+  <div class="mfooter">Menú digital hecho con <a href="kartta.html">KARTTA</a></div>
+</div>
+
+<script type="module">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/**
+ * Esta página es PÚBLICA (nadie inicia sesión para ver un menú).
+ * Por eso inicializa su propia conexión a Firebase leyendo el
+ * MISMO objeto FIREBASE_CONFIG que ya pusiste en firebase-init.js.
+ * Si prefieres no repetirlo, mueve FIREBASE_CONFIG a un tercer
+ * archivo (ej. firebase-config.js) e impórtalo desde los dos.
+ */
+const FIREBASE_CONFIG = {
+  apiKey: "PEGA_AQUI_TU_API_KEY",
+  authDomain: "TU-PROYECTO.firebaseapp.com",
+  projectId: "TU-PROYECTO",
+  storageBucket: "TU-PROYECTO.appspot.com",
+  messagingSenderId: "000000000000",
+  appId: "1:000000000000:web:xxxxxxxxxxxxxxxx",
+};
+
+const app = getApps().length ? getApps()[0] : initializeApp(FIREBASE_CONFIG);
+const db = getFirestore(app);
+
+const params = new URLSearchParams(window.location.search);
+const negocioId = params.get('negocio');
+const mesa = params.get('mesa');
+
+function mostrarError(msg){
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('errorState').style.display = 'flex';
+  if (msg) document.getElementById('errorMsg').textContent = msg;
+}
+
+function moneyCO(n){
+  return '$' + Number(n || 0).toLocaleString('es-CO');
+}
+
+async function cargarMenu(){
+  if (!negocioId) {
+    mostrarError('Este enlace no incluye el negocio. Pídele al restaurante que te comparta el QR correcto.');
+    return;
+  }
+
+  let negocio;
+  try {
+    const negocioSnap = await getDoc(doc(db, 'negocios', negocioId));
+    if (!negocioSnap.exists()) { mostrarError(); return; }
+    negocio = negocioSnap.data();
+  } catch (e) {
+    console.error(e);
+    mostrarError('No pudimos conectar con el servidor. Intenta de nuevo en un momento.');
+    return;
+  }
+
+  document.getElementById('bizName').textContent = negocio.nombre || 'Menú';
+  document.title = (negocio.nombre || 'Menú') + ' — KARTTA';
+  if (mesa) {
+    const tag = document.getElementById('mesaTag');
+    tag.style.display = 'inline-block';
+    tag.textContent = 'Mesa ' + mesa;
+  }
+
+  const prodSnap = await getDocs(collection(db, 'negocios', negocioId, 'productos'));
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('menuShell').style.display = 'block';
+
+  if (prodSnap.empty) {
+    document.getElementById('mempty').style.display = 'block';
+    return;
+  }
+
+  // Agrupar por categoría, en el orden en que van apareciendo.
+  const categorias = new Map();
+  prodSnap.forEach(d => {
+    const p = d.data();
+    const cat = (p.categoria || 'Otros').trim() || 'Otros';
+    if (!categorias.has(cat)) categorias.set(cat, []);
+    categorias.get(cat).push(p);
+  });
+
+  const mcats = document.getElementById('mcats');
+  const mlist = document.getElementById('mlist');
+  let primero = true;
+
+  categorias.forEach((productos, cat) => {
+    const catId = 'cat-' + cat.replace(/\s+/g, '-').toLowerCase();
+
+    const btn = document.createElement('button');
+    btn.className = 'mcat-btn' + (primero ? ' active' : '');
+    btn.textContent = cat;
+    btn.addEventListener('click', () => {
+      document.getElementById(catId).scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    mcats.appendChild(btn);
+
+    const title = document.createElement('div');
+    title.className = 'mcat-title';
+    title.id = catId;
+    title.textContent = cat;
+    mlist.appendChild(title);
+
+    // Disponibles primero, agotados al final de su categoría.
+    productos.sort((a, b) => (b.disponible !== false) - (a.disponible !== false));
+
+    productos.forEach(p => {
+      const disponible = p.disponible !== false;
+      const item = document.createElement('div');
+      item.className = 'mitem' + (disponible ? '' : ' off');
+      item.innerHTML = `
+        <div><div class="name">${escapeHtml(p.nombre || '')}</div></div>
+        <div class="price">${moneyCO(p.precio)}</div>`;
+      mlist.appendChild(item);
+    });
+
+    primero = false;
+  });
+
+  // Resalta la categoría visible al hacer scroll.
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(en => {
+      if (en.isIntersecting) {
+        const idx = [...document.querySelectorAll('.mcat-title')].indexOf(en.target);
+        document.querySelectorAll('.mcat-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+      }
+    });
+  }, { rootMargin: '-140px 0px -70% 0px' });
+  document.querySelectorAll('.mcat-title').forEach(t => observer.observe(t));
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+cargarMenu();
+</script>
+</body>
+</html>
