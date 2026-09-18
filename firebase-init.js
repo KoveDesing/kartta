@@ -58,10 +58,10 @@ import {
 // 1) TU CONFIGURACIÓN DE FIREBASE — reemplaza estos valores
 // ------------------------------------------------------------
 const FIREBASE_CONFIG = {
-  apiKey: "PEGA_AQUI_TU_API_KEY",
-  authDomain: "TU-PROYECTO.firebaseapp.com",
-  projectId: "TU-PROYECTO",
-  storageBucket: "TU-PROYECTO.appspot.com",
+  apiKey: "AIzaSyC7EwDbfHNPq5sjxDbSDWEkM0VMY6uQ4ls",
+  authDomain: "kartta-ba6f2.firebaseapp.com",
+  projectId: "kartta-ba6f2",
+  storageBucket: "kartta-ba6f2.firebasestorage.app",
   messagingSenderId: "000000000000",
   appId: "1:000000000000:web:xxxxxxxxxxxxxxxx",
 };
