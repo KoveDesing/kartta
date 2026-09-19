@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html lang="es">
-
-<script type="module" src="firebase-init.js"></script><head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>KARTTA</title>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KARTTA — Tu restaurante. Ahora tiene sistema.</title>
 <meta name="description" content="KARTTA conecta menú digital, QR, pedidos, cocina, POS, pagos, clientes, inventario, analytics e inteligencia artificial en un solo sistema para restaurantes, cafeterías, bares, pizzerías y food trucks.">
 <link rel="canonical" href="https://kartta.co/">
 <meta property="og:type" content="website">
@@ -89,7 +87,7 @@ section{padding:clamp(60px,8vw,112px) 0;position:relative;}
 .cta-micro{font-size:12.5px;color:var(--gray);margin-top:10px;}
 
 /* NAV */
-.nav{position:sticky;top:0;z-index:300;background:rgba(10,10,10,.62);backdrop-filter:blur(22px) saturate(140%);-webkit-backdrop-filter:blur(22px) saturate(140%);border-bottom:1px solid rgba(255,255,255,.10);transition:background .3s ease;}
+.nav{position:sticky;top:0;z-index:300;background:rgba(10,10,10,.38);backdrop-filter:blur(28px) saturate(160%);-webkit-backdrop-filter:blur(28px) saturate(160%);border-bottom:1px solid rgba(255,255,255,.08);box-shadow:0 1px 0 rgba(255,255,255,.04) inset;transition:background .3s ease;}
 .nav.scrolled{background:rgba(10,10,10,.82);}
 .nav .wrap{display:flex;align-items:center;justify-content:space-between;height:72px;}
 .nav.scrolled{box-shadow:0 12px 30px -20px rgba(0,0,0,.6);}
@@ -398,10 +396,17 @@ footer{background:var(--black);color:#B8B8B8;padding:60px 0 30px;}
       <li><a href="#modulos">Funciones</a></li>
       <li><a href="#precios">Precios</a></li>
     </ul>
-    <div class="nav-actions">
+    <div class="nav-actions" id="navActionsLoggedOut">
       <a href="#footer" class="link-quiet">Contacto</a>
       <a href="#login" class="link-quiet" data-auth="login"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>Iniciar sesión</a>
       <a href="#" class="btn btn-primary" data-auth="signup">Crear mi KARTTA →</a>
+    </div>
+    <div class="nav-actions" id="navActionsLoggedIn" style="display:none;">
+      <a href="dashboard.html" style="display:flex;align-items:center;gap:10px;">
+        <img id="navAvatar" src="" alt="" style="width:30px;height:30px;border-radius:50%;object-fit:cover;background:#333;">
+        <span id="navBizName" style="font-size:13.5px;font-weight:600;color:#D8D8D8;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</span>
+      </a>
+      <a href="dashboard.html" class="btn btn-primary">Ir a mi panel →</a>
     </div>
     <button class="nav-toggle" id="navToggle" aria-label="Abrir menú"><span></span><span></span><span></span></button>
   </div>
@@ -855,6 +860,40 @@ document.addEventListener('DOMContentLoaded', function(){
       promoModal.addEventListener('click', function(e){ if(e.target === promoModal) promoModal.style.display='none'; });
     }
   }catch(e){}
+
+  // navbar dinámico según sesión (avatar + negocio + ir a mi panel)
+  (function(){
+    function esperarAuth(intentos){
+      var t = setInterval(function(){
+        intentos--;
+        if (window.KARTTA_AUTH && window.KARTTA_AUTH.onChange) {
+          clearInterval(t);
+          window.KARTTA_AUTH.onChange(async function(user){
+            var out = document.getElementById('navActionsLoggedOut');
+            var inn = document.getElementById('navActionsLoggedIn');
+            if (!out || !inn) return;
+            if (!user) { out.style.display = 'flex'; inn.style.display = 'none'; return; }
+            out.style.display = 'none';
+            inn.style.display = 'flex';
+            document.getElementById('navAvatar').src = user.photoURL ||
+              ('https://api.dicebear.com/7.x/initials/svg?seed=' + encodeURIComponent(user.displayName || user.email || 'K') + '&backgroundColor=FF3145&textColor=ffffff');
+            document.getElementById('navBizName').textContent = 'Tu negocio';
+            try {
+              var mod = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+              var appMod = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+              var db = mod.getFirestore(appMod.getApps()[0]);
+              var perfilSnap = await mod.getDoc(mod.doc(db, 'usuarios', user.uid));
+              if (perfilSnap.exists() && perfilSnap.data().negocioId) {
+                var negSnap = await mod.getDoc(mod.doc(db, 'negocios', perfilSnap.data().negocioId));
+                if (negSnap.exists()) document.getElementById('navBizName').textContent = negSnap.data().nombre || 'Tu negocio';
+              }
+            } catch (e) { console.warn('No se pudo cargar el nombre del negocio en el navbar', e); }
+          });
+        } else if (intentos <= 0) { clearInterval(t); }
+      }, 200);
+    }
+    esperarAuth(20);
+  })();
 
   var nav = document.getElementById('nav');
   window.addEventListener('scroll', function(){ nav.classList.toggle('scrolled', window.scrollY>12); }, {passive:true});
