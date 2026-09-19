@@ -97,19 +97,19 @@ import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "ht
  * archivo (ej. firebase-config.js) e impórtalo desde los dos.
  */
 const FIREBASE_CONFIG = {
-  apiKey: "PEGA_AQUI_TU_API_KEY",
-  authDomain: "TU-PROYECTO.firebaseapp.com",
-  projectId: "TU-PROYECTO",
-  storageBucket: "TU-PROYECTO.appspot.com",
-  messagingSenderId: "000000000000",
-  appId: "1:000000000000:web:xxxxxxxxxxxxxxxx",
+  apiKey: "AIzaSyC7EwDbfHNPq5sjxDbSDWEkM0VMY6uQ4ls",
+  authDomain: "kartta-ba6f2.firebaseapp.com",
+  projectId: "kartta-ba6f2",
+  storageBucket: "kartta-ba6f2.firebasestorage.app",
+  messagingSenderId: "1031500564852",
+  appId: "1:1031500564852:web:347f70f7a8a116610f8421",
 };
 
 const app = getApps().length ? getApps()[0] : initializeApp(FIREBASE_CONFIG);
 const db = getFirestore(app);
 
 const params = new URLSearchParams(window.location.search);
-const negocioId = params.get('negocio');
+let negocioId = params.get('negocio');
 const mesa = params.get('mesa');
 
 function mostrarError(msg){
@@ -122,7 +122,20 @@ function moneyCO(n){
   return '$' + Number(n || 0).toLocaleString('es-CO');
 }
 
+async function resolverNegocioIdPorDominio(){
+  const host = window.location.hostname;
+  // localhost / vercel.app / github.io: no tiene sentido buscar dominio propio
+  if (host === 'localhost' || host.endsWith('.vercel.app') || host.endsWith('.github.io')) return null;
+  try {
+    const snap = await getDoc(doc(db, 'dominios', host));
+    return snap.exists() ? snap.data().negocioId : null;
+  } catch { return null; }
+}
+
 async function cargarMenu(){
+  if (!negocioId) {
+    negocioId = await resolverNegocioIdPorDominio();
+  }
   if (!negocioId) {
     mostrarError('Este enlace no incluye el negocio. Pídele al restaurante que te comparta el QR correcto.');
     return;
