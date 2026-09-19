@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
-<script type="module" src="firebase-init.js"></script><head>
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Panel — KARTTA</title>
@@ -11,11 +11,11 @@
 <style>
 :root{
   --white:#FFFFFF; --black:#0A0A0A; --red:#FF3145; --red-dim:#E22940;
-  --gray:#777777; --surface:#F5F5F3; --border:#E8E8E6;
-  --r-card:16px; --r-lg:20px;
+  --gray:#9A9A9A; --gray-dim:#6E6E6E; --bg:#0A0A0A; --panel:#151515; --panel2:#1C1C1C; --border:#262626;
+  --r-card:14px; --r-lg:16px;
 }
 *{box-sizing:border-box;}
-body{margin:0;font-family:'Inter',-apple-system,sans-serif;background:var(--surface);color:var(--black);}
+body{margin:0;font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:#EDEDED;}
 a{color:inherit;text-decoration:none;}
 button{font-family:inherit;border:none;background:none;cursor:pointer;}
 input,select{font-family:inherit;}
@@ -32,85 +32,90 @@ input,select{font-family:inherit;}
 #app.ready{display:grid;}
 @media (max-width:900px){ #app.ready{grid-template-columns:1fr;} #sidebar{position:fixed;z-index:200;height:100vh;transform:translateX(-100%);transition:transform .25s ease;} #sidebar.open{transform:translateX(0);} }
 
-#sidebar{background:var(--black);color:#fff;padding:22px 16px;display:flex;flex-direction:column;gap:4px;}
+#sidebar{background:#000;color:#fff;padding:22px 16px;display:flex;flex-direction:column;gap:4px;border-right:1px solid var(--border);}
 .sb-brand{font-size:20px;font-weight:800;letter-spacing:-.01em;padding:8px 10px 20px;}
 .sb-brand span{color:var(--red);}
-.sb-item{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:11px;font-size:13.5px;font-weight:600;color:#B8B8B8;transition:background .15s ease,color .15s ease;}
-.sb-item:hover{background:#161616;color:#fff;}
-.sb-item.active{background:#1B1010;color:#fff;}
+.sb-item{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:10px;font-size:13.5px;font-weight:600;color:#8A8A8A;transition:background .15s ease,color .15s ease;}
+.sb-item:hover{background:var(--panel);color:#fff;}
+.sb-item.active{background:var(--panel);color:#fff;}
 .sb-item svg{flex-shrink:0;}
-.sb-sep{height:1px;background:#1E1E1E;margin:14px 4px;}
+.sb-sep{height:1px;background:var(--border);margin:14px 4px;}
 .sb-foot{margin-top:auto;padding:10px;}
-.sb-biz{font-size:11px;color:#7A7A7A;padding:0 10px 8px;text-transform:uppercase;letter-spacing:.05em;}
+.sb-biz{font-size:11px;color:#666;padding:0 10px 8px;text-transform:uppercase;letter-spacing:.05em;}
 
-#main{padding:28px clamp(18px,3vw,40px) 60px;overflow-x:hidden;}
+#main{padding:28px clamp(18px,3vw,40px) 60px;overflow-x:hidden;background:var(--bg);}
 .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:26px;gap:12px;}
-.topbar h1{font-size:22px;font-weight:800;margin:0;}
+.topbar h1{font-size:22px;font-weight:800;margin:0;color:#fff;}
 .topbar p{margin:2px 0 0;font-size:13px;color:var(--gray);}
-.mobile-toggle{display:none;width:38px;height:38px;border-radius:10px;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.1);align-items:center;justify-content:center;}
+.mobile-toggle{display:none;width:38px;height:38px;border-radius:10px;background:var(--panel);border:1px solid var(--border);align-items:center;justify-content:center;color:#fff;}
 @media (max-width:900px){ .mobile-toggle{display:flex;} }
 
-.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
 @media (max-width:900px){ .stat-grid{grid-template-columns:repeat(2,1fr);} }
-.stat-card{background:#fff;border-radius:var(--r-card);padding:20px;box-shadow:0 1px 0 var(--border);}
+.stat-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--r-card);padding:18px;}
 .stat-card .l{font-size:11.5px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.04em;}
-.stat-card .n{font-size:26px;font-weight:800;margin-top:8px;}
+.stat-card .n{font-size:24px;font-weight:800;margin-top:8px;color:#fff;}
 
-.panel{background:#fff;border-radius:var(--r-lg);padding:24px;margin-bottom:20px;box-shadow:0 1px 0 var(--border);}
-.panel h2{font-size:16px;font-weight:800;margin:0 0 4px;}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--r-lg);padding:24px;margin-bottom:20px;}
+.panel h2{font-size:16px;font-weight:800;margin:0 0 4px;color:#fff;}
 .panel .sub{font-size:12.5px;color:var(--gray);margin:0 0 18px;}
 
 .btn{display:inline-flex;align-items:center;gap:7px;padding:11px 18px;border-radius:11px;font-size:13.5px;font-weight:700;transition:transform .15s ease,background .15s ease;}
 .btn:active{transform:scale(.97);}
 .btn-primary{background:var(--red);color:#fff;}
 .btn-primary:hover{background:var(--red-dim);}
-.btn-outline{background:var(--surface);color:var(--black);}
-.btn-outline:hover{background:#ECECEA;}
-.btn-danger{background:#FDECEC;color:var(--red);font-size:12px;padding:7px 12px;}
+.btn-outline{background:var(--panel2);color:#EDEDED;border:1px solid var(--border);}
+.btn-outline:hover{background:#242424;}
+.btn-danger{background:rgba(255,49,69,.12);color:var(--red);font-size:12px;padding:7px 12px;}
 
-table{width:100%;border-collapse:collapse;font-size:13.5px;}
+table{width:100%;border-collapse:collapse;font-size:13.5px;color:#EDEDED;}
 th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--gray);font-weight:700;padding:0 10px 10px;}
 td{padding:12px 10px;border-top:1px solid var(--border);}
 .badge{font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;}
-.badge.on{background:#E8F8EE;color:#1EA35A;}
-.badge.off{background:var(--surface);color:var(--gray);}
+.badge.on{background:rgba(30,163,90,.15);color:#3ECF7E;}
+.badge.off{background:var(--panel2);color:var(--gray);}
 .row-actions{display:flex;gap:8px;}
 .icon-btn{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--gray);}
-.icon-btn:hover{background:var(--surface);color:var(--black);}
+.icon-btn:hover{background:var(--panel2);color:#fff;}
 
 .empty{text-align:center;padding:40px 20px;color:var(--gray);font-size:13.5px;}
 
-#productModal{position:fixed;inset:0;background:rgba(10,10,10,.55);display:none;align-items:center;justify-content:center;z-index:300;padding:20px;}
-#productModal .box{background:#fff;border-radius:20px;padding:26px;max-width:420px;width:100%;}
-#productModal h3{margin:0 0 18px;font-size:17px;font-weight:800;}
+#productModal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:300;padding:20px;}
+#productModal .box{background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:26px;max-width:420px;width:100%;}
+#productModal h3{margin:0 0 18px;font-size:17px;font-weight:800;color:#fff;}
 .field{margin-bottom:14px;}
-.field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px;}
-.field input,.field select{width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:13.5px;background:var(--surface);}
+.field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px;color:#EDEDED;}
+.field input,.field select{width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:13.5px;background:var(--panel2);color:#fff;}
 .field-row{display:flex;gap:12px;}
 .field-row .field{flex:1;}
-.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--black);color:#fff;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:400;box-shadow:0 20px 40px -16px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .25s ease;}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#fff;color:var(--black);padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:400;box-shadow:0 20px 40px -16px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .25s ease;}
 .toast.show{opacity:1;}
 
-/* ---- Chat IA (mismo lenguaje visual que la landing) ---- */
-.kchat-head{display:flex;align-items:center;gap:10px;padding:16px 22px;background:#151515;color:#fff;}
-.kchat-dot{width:8px;height:8px;border-radius:50%;background:#7CD98A;box-shadow:0 0 0 3px rgba(124,217,138,.2);}
+/* ---- Chat IA — estilo ChatGPT/iMessage, oscuro ---- */
+.kchat-head{display:flex;align-items:center;gap:10px;padding:16px 22px;background:var(--panel);border-bottom:1px solid var(--border);color:#fff;}
+.kchat-dot{width:8px;height:8px;border-radius:50%;background:#3ECF7E;box-shadow:0 0 0 3px rgba(62,207,126,.18);}
 .kchat-title{font-size:14px;font-weight:700;flex:1;}
-.kchat-status{font-size:11.5px;color:#8A8A8A;font-weight:600;}
-.kchat-body{padding:22px;min-height:260px;max-height:420px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;background:#FAFAF9;}
-.kbubble{max-width:80%;padding:13px 17px;font-size:14px;line-height:1.55;border-radius:16px;}
-.kbubble.bot{background:#FFFFFF;color:var(--black);border-bottom-left-radius:5px;align-self:flex-start;box-shadow:4px 4px 10px rgba(10,10,10,.05),-4px -4px 10px rgba(255,255,255,.9);}
+.kchat-status{font-size:11.5px;color:#666;font-weight:600;}
+.kchat-body{padding:22px;min-height:260px;max-height:420px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;background:var(--panel);}
+.kbubble{max-width:78%;padding:12px 16px;font-size:14.5px;line-height:1.55;border-radius:18px;animation:kbIn .25s ease;}
+@keyframes kbIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.kbubble.bot{background:var(--panel2);color:#EDEDED;border-bottom-left-radius:5px;align-self:flex-start;}
 .kbubble.user{background:var(--red);color:#fff;border-bottom-right-radius:5px;align-self:flex-end;}
-.kbubble.typing{display:flex;gap:5px;align-items:center;}
-.kbubble.typing i{width:6px;height:6px;border-radius:50%;background:var(--gray);display:block;animation:iaTyping 1.2s ease-in-out infinite;}
+.kbubble.typing{display:flex;gap:5px;align-items:center;padding:15px 16px;}
+.kbubble.typing i{width:6px;height:6px;border-radius:50%;background:#777;display:block;animation:iaTyping 1.2s ease-in-out infinite;}
 .kbubble.typing i:nth-child(2){animation-delay:.18s;}
 .kbubble.typing i:nth-child(3){animation-delay:.36s;}
 @keyframes iaTyping{0%,60%,100%{opacity:.25;}30%{opacity:1;}}
-.kchat-chips{display:flex;flex-wrap:wrap;gap:8px;padding:14px 22px 0;background:#FAFAF9;}
-.kchip{background:#FFFFFF;border-radius:999px;padding:9px 15px;font-size:12.5px;font-weight:600;color:var(--gray);box-shadow:4px 4px 10px rgba(10,10,10,.06),-4px -4px 10px rgba(255,255,255,.9);}
-.kchip:hover{color:var(--black);}
-.kchat-input{display:flex;gap:10px;padding:16px 22px 22px;background:#FAFAF9;}
-.kchat-input input{flex:1;border:none;background:#FFFFFF;border-radius:14px;padding:14px 18px;font-size:14px;font-family:inherit;box-shadow:inset 3px 3px 8px rgba(10,10,10,.06),inset -3px -3px 8px rgba(255,255,255,.9);}
-.kchat-input button{width:48px;height:48px;border-radius:14px;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.kchat-chips{display:flex;flex-wrap:wrap;gap:8px;padding:14px 22px 0;background:var(--panel);}
+.kchip{background:var(--panel2);border:1px solid var(--border);border-radius:999px;padding:9px 15px;font-size:12.5px;font-weight:600;color:var(--gray);}
+.kchip:hover{color:#fff;border-color:#3A3A3A;}
+.kchat-input{display:flex;gap:10px;padding:16px 22px 22px;background:var(--panel);align-items:flex-end;}
+.kchat-input input{flex:1;border:1px solid var(--border);background:var(--panel2);border-radius:14px;padding:14px 18px;font-size:14.5px;font-family:inherit;color:#fff;outline:none;transition:border-color .15s ease;}
+.kchat-input input:focus{border-color:var(--red);}
+.kchat-input input::placeholder{color:#666;}
+.kchat-input button{width:46px;height:46px;border-radius:14px;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s ease,transform .15s ease;}
+.kchat-input button:hover{background:var(--red-dim);}
+.kchat-input button:active{transform:scale(.94);}
 
 /* ---- Mesas y QR ---- */
 .mesa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-top:6px;}
@@ -250,7 +255,7 @@ td{padding:12px 10px;border-top:1px solid var(--border);}
           <span class="kchat-status">En línea</span>
         </div>
         <div class="kchat-body" id="iaBody">
-          <div class="kbubble bot">Hola, soy tu asistente de KARTTA 👋<br>Pregúntame por tus ventas, tu menú o pídeme que ajuste un precio — por ahora respondo en modo demo hasta que conectes el backend de IA.</div>
+          <div class="kbubble bot" id="iaGreeting">Hola, soy tu asistente de KARTTA 👋<br>Pregúntame por tus ventas, tu menú o pídeme que ajuste un precio — por ahora respondo en modo demo hasta que conectes el backend de IA.</div>
         </div>
         <div class="kchat-chips">
           <button class="kchip" data-q="¿Cómo van mis ventas hoy?">¿Cómo van mis ventas hoy?</button>
@@ -275,6 +280,16 @@ td{padding:12px 10px;border-top:1px solid var(--border);}
           <div class="field"><label>Nombre del negocio</label><input id="cfgNombre" type="text"></div>
         </div>
         <button class="btn btn-primary" id="btnGuardarConfig">Guardar cambios</button>
+      </div>
+
+      <div class="panel">
+        <h2>Dominio propio</h2>
+        <p class="sub">Por ahora tu menú vive en esta web. Cuando tengas tu propio dominio (ej. mirestaurante.co), agrégalo primero en Vercel → Settings → Domains, y después ponlo aquí para que apunte a tu negocio automáticamente.</p>
+        <div class="field-row">
+          <div class="field"><label>Tu dominio (sin https://)</label><input id="cfgDominio" type="text" placeholder="mirestaurante.co"></div>
+        </div>
+        <button class="btn btn-outline" id="btnGuardarDominio">Conectar dominio</button>
+        <p id="dominioActual" style="font-size:12.5px;color:var(--gray);margin-top:12px;"></p>
       </div>
     </section>
   </main>
@@ -358,17 +373,30 @@ async function iniciar(){
       const negocioSnap = await getDoc(doc(db, 'negocios', negocioId));
       negocioData = negocioSnap.exists() ? negocioSnap.data() : {};
 
-      document.getElementById('greeting').textContent = `Hola de nuevo, ${user.displayName || user.email.split('@')[0]}`;
+      if (!negocioData.onboardingCompleted) {
+        window.location.href = 'onboarding.html';
+        return;
+      }
+
+      const nombreSaludo = perfilSnap.data().nombrePanel || user.displayName || user.email.split('@')[0];
+      document.getElementById('greeting').textContent = `Hola, ${nombreSaludo}`;
       document.getElementById('bizLine').textContent = negocioData.nombre || 'Tu negocio';
       document.getElementById('sbBiz').textContent = negocioData.nombre || 'Tu negocio';
       document.getElementById('statPlan').textContent = negocioData.plan === 'trial' ? '1 mes gratis' : (negocioData.plan || 'Free');
       document.getElementById('cfgNombre').value = negocioData.nombre || '';
+      if (negocioData.dominio) {
+        document.getElementById('cfgDominio').value = negocioData.dominio;
+        document.getElementById('dominioActual').textContent = `Conectado: ${negocioData.dominio}`;
+      }
 
       gate.classList.add('hidden');
       app.classList.add('ready');
 
       cargarProductos();
       cargarMesas();
+
+      const greetEl = document.getElementById('iaGreeting');
+      if (greetEl) greetEl.innerHTML = `Hola, ${negocioData.nombre || 'de nuevo'} 👋 ¿cómo estás?<br>Pregúntame lo que quieras sobre tu negocio.`;
     } catch (e) {
       console.error(e);
       showGateError('Tu cuenta no tiene un negocio asociado todavía.');
@@ -526,6 +554,21 @@ document.getElementById('btnGuardarConfig').addEventListener('click', async () =
   }
 });
 
+document.getElementById('btnGuardarDominio').addEventListener('click', async () => {
+  let dominio = document.getElementById('cfgDominio').value.trim().toLowerCase();
+  dominio = dominio.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  if (!dominio || !dominio.includes('.')) return toast('Escribe un dominio válido, ej: mirestaurante.co');
+  try {
+    await setDoc(doc(db, 'dominios', dominio), { negocioId, creado: new Date().toISOString() });
+    await setDoc(doc(db, 'negocios', negocioId), { dominio }, { merge: true });
+    document.getElementById('dominioActual').textContent = `Conectado: ${dominio} — recuerda agregarlo también en Vercel → Settings → Domains para que resuelva de verdad.`;
+    toast('Dominio conectado.');
+  } catch (e) {
+    console.error(e);
+    toast('No se pudo conectar el dominio.');
+  }
+});
+
 iniciar();
 
 // ---------------- Mesas y QR ----------------
@@ -629,10 +672,15 @@ function iaBubble(html, who){
 function respuestaAdminLocal(msg){
   const m = msg.toLowerCase();
   const numProductos = document.getElementById('statProductos').textContent;
+  const tipo = (negocioData && negocioData.tipoNegocio) || 'negocio';
+  const oferta = (negocioData && negocioData.oferta) || '';
   if (m.includes('venta')) return 'Modo demo: aún no tengo el backend de IA conectado para calcular ventas reales. Cuando despliegues la Cloud Function `aiChatAdmin`, te responderé con tus cifras reales de Firestore.';
   if (m.includes('producto') || m.includes('cuant')) return `Tienes ${numProductos === '—' ? '0' : numProductos} producto(s) cargados en tu menú ahora mismo.`;
   if (m.includes('precio') || m.includes('sube') || m.includes('baja') || m.includes('cambia')) return 'Modo demo: puedo cambiar precios cuando conectes `aiChatAdmin` (ya te dejé esa función lista) — ahí sí valido el producto, tu rol y dejo el registro en el historial antes de aplicar el cambio.';
-  return 'Así se verá tu asistente una vez inicies sesión. En modo demo respondo cosas básicas de tu cuenta; cuando conectes el backend de IA, voy a poder leer tus ventas reales y hacer cambios validados por ti.';
+  if (m.includes('publica') || m.includes('cliente') || m.includes('marketing') || m.includes('promocion')) {
+    return `Como ${tipo.toLowerCase()}${oferta ? ' que ofrece ' + oferta.toLowerCase() : ''}, podrías mostrar tu QR en redes, avisar cuando tengas algo nuevo en el menú, e invitar a tus primeros clientes a dejar una reseña — eso es justo lo que activa tu mes gratis. Cuando conecte el backend de IA, te doy ideas más afinadas con tus ventas reales.`;
+  }
+  return `Así se verá tu asistente una vez inicies sesión. Sé que tu negocio es "${negocioData?.nombre || ''}" (${tipo}) — en modo demo respondo cosas básicas; cuando conectes el backend de IA, voy a poder leer tus ventas reales y hacer cambios validados por ti.`;
 }
 
 async function preguntarIA(msg){
