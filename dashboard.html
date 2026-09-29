@@ -125,9 +125,25 @@ td{padding:12px 10px;border-top:1px solid var(--border);}
 .mesa-card .qrbox img,.mesa-card .qrbox canvas{width:100%!important;height:100%!important;}
 .mesa-card .actions{display:flex;gap:8px;justify-content:center;}
 .mesa-card .actions button{font-size:11.5px;padding:7px 10px;}
+
+/* ---- Pedidos ---- */
+.ped-card{border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:12px;background:var(--panel2);}
+.ped-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;}
+.ped-mesa{font-size:14px;font-weight:800;}
+.ped-cliente{font-size:12px;color:var(--gray);margin-top:2px;}
+.ped-badge{font-size:10.5px;font-weight:800;padding:5px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em;}
+.ped-badge.nuevo{background:rgba(255,49,69,.15);color:var(--red);}
+.ped-badge.preparando{background:rgba(255,180,0,.15);color:#FFB800;}
+.ped-badge.listo{background:rgba(62,207,126,.15);color:#3ECF7E;}
+.ped-badge.entregado{background:var(--panel);color:var(--gray);}
+.ped-items{font-size:12.5px;color:#C9C9C9;margin:8px 0;line-height:1.6;}
+.ped-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:10px;}
+.ped-total{font-weight:800;font-size:14px;}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script type="module" src="firebase-init.js"></script>
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="shortcut icon" href="/favicon.ico">
 </head>
 <body>
 
@@ -192,11 +208,12 @@ td{padding:12px 10px;border-top:1px solid var(--border);}
     <!-- ===== VISTA: INICIO ===== -->
     <section data-panel="inicio">
       <div class="stat-grid">
-        <div class="stat-card"><div class="l">Productos activos</div><div class="n" id="statProductos">—</div></div>
-        <div class="stat-card"><div class="l">Pedidos hoy</div><div class="n">0</div></div>
-        <div class="stat-card"><div class="l">Clientes</div><div class="n">0</div></div>
+        <div class="stat-card"><div class="l">Ventas hoy</div><div class="n" id="statVentasHoy">$0</div></div>
+        <div class="stat-card"><div class="l">Pedidos hoy</div><div class="n" id="statPedidosHoy">0</div></div>
+        <div class="stat-card"><div class="l">Clientes</div><div class="n" id="statClientes">0</div></div>
         <div class="stat-card"><div class="l">Plan actual</div><div class="n" id="statPlan" style="font-size:16px;">—</div></div>
       </div>
+      <p class="sub" style="margin-top:-6px;">Productos activos: <b id="statProductos" style="color:#fff;">—</b></p>
       <div class="panel">
         <h2>Bienvenido a tu panel</h2>
         <p class="sub">Empieza cargando tu menú — es lo primero que verán tus clientes al escanear el QR.</p>
@@ -239,12 +256,22 @@ td{padding:12px 10px;border-top:1px solid var(--border);}
     </section>
 
     <section data-panel="pedidos" style="display:none;">
-      <div class="panel"><h2>Pedidos</h2><p class="sub">Aquí verás los pedidos en tiempo real apenas actives el módulo de mesas y QR.</p><div class="empty">Aún no hay pedidos.</div></div>
+      <div class="panel">
+        <h2>Pedidos</h2>
+        <p class="sub">En tiempo real. Toca "Avanzar" para mover el pedido al siguiente estado.</p>
+        <div id="pedidosList"></div>
+        <div class="empty" id="pedidosEmpty">Aún no hay pedidos.</div>
+      </div>
     </section>
 
     <!-- ===== VISTA: CLIENTES ===== -->
     <section data-panel="clientes" style="display:none;">
-      <div class="panel"><h2>Clientes</h2><p class="sub">Se irán agregando automáticamente con cada pedido.</p><div class="empty">Aún no hay clientes registrados.</div></div>
+      <div class="panel">
+        <h2>Clientes</h2>
+        <p class="sub">Se agregan solos con cada pedido — ordenados por cuánto te han comprado.</p>
+        <div id="clientesList"></div>
+        <div class="empty" id="clientesEmpty">Aún no hay clientes registrados.</div>
+      </div>
     </section>
 
     <!-- ===== VISTA: IA ===== -->
@@ -395,6 +422,7 @@ async function iniciar(){
 
       cargarProductos();
       cargarMesas();
+      cargarPedidos();
 
       const greetEl = document.getElementById('iaGreeting');
       if (greetEl) greetEl.innerHTML = `Hola, ${negocioData.nombre || 'de nuevo'} 👋 ¿cómo estás?<br>Pregúntame lo que quieras sobre tu negocio.`;
@@ -653,6 +681,127 @@ async function eliminarMesa(id){
   } catch (e) {
     console.error(e);
     toast('No se pudo eliminar.');
+  }
+}
+
+// ---------------- Pedidos ----------------
+const PED_ESTADOS = ['nuevo', 'preparando', 'listo', 'entregado'];
+const PED_LABEL = { nuevo: 'Nuevo', preparando: 'Preparando', listo: 'Listo', entregado: 'Entregado' };
+
+function cargarPedidos(){
+  const ref = query(collection(db, 'negocios', negocioId, 'pedidos'), orderBy('creado', 'desc'));
+  onSnapshot(ref, (snap) => {
+    const list = document.getElementById('pedidosList');
+    const vacio = document.getElementById('pedidosEmpty');
+    list.innerHTML = '';
+
+    // ---- acumuladores para Inicio y Clientes ----
+    const hoy = new Date(); hoy.setHours(0,0,0,0);
+    let ventasHoy = 0, pedidosHoy = 0;
+    const clientes = new Map(); // telefono||nombre -> {nombre, telefono, pedidos, total}
+
+    if (snap.empty) { vacio.style.display = 'block'; } else { vacio.style.display = 'none'; }
+
+    snap.forEach(docSnap => {
+      const p = docSnap.data();
+      const estado = p.estado || 'nuevo';
+      const idx = PED_ESTADOS.indexOf(estado);
+      const siguiente = PED_ESTADOS[idx + 1];
+      const fecha = p.creado && p.creado.toDate ? p.creado.toDate() : null;
+      const esHoy = fecha && fecha >= hoy;
+      if (esHoy) { pedidosHoy++; ventasHoy += Number(p.total || 0); }
+
+      const key = (p.clienteTelefono || p.clienteNombre || 'anon').toLowerCase();
+      if (!clientes.has(key)) clientes.set(key, { nombre: p.clienteNombre || 'Cliente', telefono: p.clienteTelefono || '', pedidos: 0, total: 0 });
+      const c = clientes.get(key);
+      c.pedidos++; c.total += Number(p.total || 0);
+
+      const items = (p.items || []).map(it => `${it.cantidad}x ${escapeHtml(it.nombre)}`).join(' · ');
+      const pagado = !!p.pagado;
+
+      const card = document.createElement('div');
+      card.className = 'ped-card';
+      card.innerHTML = `
+        <div class="ped-top">
+          <div>
+            <div class="ped-mesa">Mesa ${escapeHtml(String(p.mesa || '—'))}</div>
+            <div class="ped-cliente">${escapeHtml(p.clienteNombre || 'Cliente')}${p.clienteTelefono ? ' · ' + escapeHtml(p.clienteTelefono) : ''}</div>
+          </div>
+          <span class="ped-badge ${estado}">${PED_LABEL[estado] || estado}</span>
+        </div>
+        <div class="ped-items">${items || 'Sin productos'}</div>
+        <div class="ped-bottom">
+          <span class="ped-total">$${Number(p.total || 0).toLocaleString('es-CO')} ${pagado ? '<span class="badge on" style="margin-left:6px;">Pagado</span>' : '<span class="badge off" style="margin-left:6px;">Sin pagar</span>'}</span>
+          <div style="display:flex;gap:8px;">
+            ${!pagado ? `<button class="btn btn-outline" data-pagar="${docSnap.id}" style="font-size:12px;padding:8px 14px;">Marcar pagado</button>` : ''}
+            ${siguiente ? `<button class="btn btn-primary" data-avanzar="${docSnap.id}" data-next="${siguiente}" style="font-size:12px;padding:8px 14px;">Avanzar a ${PED_LABEL[siguiente]}</button>` : ''}
+          </div>
+        </div>`;
+      list.appendChild(card);
+    });
+
+    list.querySelectorAll('[data-avanzar]').forEach(b => {
+      b.addEventListener('click', () => avanzarPedido(b.dataset.avanzar, b.dataset.next));
+    });
+    list.querySelectorAll('[data-pagar]').forEach(b => {
+      b.addEventListener('click', () => marcarPagado(b.dataset.pagar));
+    });
+
+    // ---- actualizar Inicio ----
+    const statPedidosHoy = document.getElementById('statPedidosHoy');
+    if (statPedidosHoy) statPedidosHoy.textContent = pedidosHoy;
+    const statVentasHoy = document.getElementById('statVentasHoy');
+    if (statVentasHoy) statVentasHoy.textContent = '$' + ventasHoy.toLocaleString('es-CO');
+    const statClientes = document.getElementById('statClientes');
+    if (statClientes) statClientes.textContent = clientes.size;
+
+    // ---- actualizar Clientes ----
+    renderClientes(clientes);
+  }, (err) => { console.error(err); toast('No pude cargar los pedidos.'); });
+}
+
+function renderClientes(clientesMap){
+  const cont = document.getElementById('clientesList');
+  const vacio = document.getElementById('clientesEmpty');
+  if (!cont) return;
+  cont.innerHTML = '';
+
+  if (clientesMap.size === 0) { vacio.style.display = 'block'; return; }
+  vacio.style.display = 'none';
+
+  const ordenados = [...clientesMap.values()].sort((a, b) => b.total - a.total);
+  ordenados.forEach(c => {
+    const row = document.createElement('div');
+    row.className = 'ped-card';
+    row.innerHTML = `
+      <div class="ped-top">
+        <div>
+          <div class="ped-mesa">${escapeHtml(c.nombre)}</div>
+          <div class="ped-cliente">${c.telefono ? escapeHtml(c.telefono) : 'Sin teléfono'}</div>
+        </div>
+        <span class="ped-badge entregado">${c.pedidos} pedido${c.pedidos === 1 ? '' : 's'}</span>
+      </div>
+      <div class="ped-bottom"><span class="ped-total">$${c.total.toLocaleString('es-CO')} en total</span></div>`;
+    cont.appendChild(row);
+  });
+}
+
+async function marcarPagado(id){
+  try {
+    await updateDoc(doc(db, 'negocios', negocioId, 'pedidos', id), { pagado: true });
+    toast('Marcado como pagado.');
+  } catch (e) {
+    console.error(e);
+    toast('No se pudo actualizar.');
+  }
+}
+
+async function avanzarPedido(id, siguienteEstado){
+  try {
+    await updateDoc(doc(db, 'negocios', negocioId, 'pedidos', id), { estado: siguienteEstado });
+  } catch (e) {
+    console.error(e);
+    toast('No se pudo actualizar el pedido.');
   }
 }
 
