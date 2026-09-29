@@ -75,6 +75,8 @@ textarea{resize:vertical;min-height:90px;line-height:1.5;}
 #saving p{color:var(--gray);}
 </style>
 <script type="module" src="firebase-init.js"></script>
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="shortcut icon" href="/favicon.ico">
 </head>
 <body>
 
@@ -356,9 +358,13 @@ async function finalizar(){
     // no tener su membresía "owner" creada. La creamos aquí si falta —
     // las reglas ya lo permiten porque es el propio dueño creando su registro.
     const miembroRef = doc(db, 'negocios', negocioId, 'miembros', uid);
-    const miembroSnap = await getDoc(miembroRef);
-    if (!miembroSnap.exists()) {
+    try {
       await setDoc(miembroRef, { rol: 'owner', email: userEmail || '', desde: serverTimestamp() });
+    } catch (e) {
+      // Si ya existía, Firestore lo trata como "update" y las reglas lo bloquean
+      // a propósito (nadie cambia su propio rol) — eso es justo lo esperado,
+      // significa que ya eras miembro. Cualquier otro error sí lo mostramos.
+      if (e.code !== 'permission-denied') throw e;
     }
 
     await setDoc(doc(db, 'negocios', negocioId), {
