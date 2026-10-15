@@ -83,14 +83,20 @@ function slugify(texto) {
     .slice(0, 40) || "mi-negocio";
 }
 
+const TERMS_VERSION = "1.0";
+
 async function crearNegocioParaNuevoUsuario(user, nombreNegocio) {
   const negocioId = `${slugify(nombreNegocio)}-${user.uid.slice(0, 6)}`;
 
   await setDoc(doc(db, "usuarios", user.uid), {
+    uid: user.uid,
     nombre: user.displayName || nombreNegocio,
     email: user.email,
     negocioId,
     creado: serverTimestamp(),
+    termsAccepted: true,
+    termsVersion: TERMS_VERSION,
+    termsAcceptedAt: serverTimestamp(),
   });
 
   await setDoc(doc(db, "negocios", negocioId), {
@@ -114,7 +120,10 @@ async function crearNegocioParaNuevoUsuario(user, nombreNegocio) {
 // ------------------------------------------------------------
 
 window.KARTTA_AUTH = {
-  async signup(email, pass, nombreNegocio) {
+  async signup(email, pass, nombreNegocio, acceptedTerms) {
+    if (acceptedTerms !== true) {
+      const err = new Error("terms-required"); err.code = "terms-required"; throw err;
+    }
     const cred = await createUserWithEmailAndPassword(auth, email, pass);
     if (nombreNegocio) {
       await updateProfile(cred.user, { displayName: nombreNegocio });
@@ -127,13 +136,17 @@ window.KARTTA_AUTH = {
     return signInWithEmailAndPassword(auth, email, pass);
   },
 
-  async google() {
+  async google(acceptedTerms) {
     const cred = await signInWithPopup(auth, new GoogleAuthProvider());
     // Si es la primera vez que este usuario entra, también necesita negocio.
     const yaExiste = await import(
       "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
     ).then(({ getDoc, doc: d }) => getDoc(d(db, "usuarios", cred.user.uid)));
     if (!yaExiste.exists()) {
+      if (acceptedTerms !== true) {
+        await signOut(auth);
+        const err = new Error("terms-required"); err.code = "terms-required"; throw err;
+      }
       await crearNegocioParaNuevoUsuario(cred.user, cred.user.displayName || "Mi negocio");
     }
     return cred;
