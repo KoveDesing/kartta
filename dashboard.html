@@ -1,874 +1,819 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Panel — KARTTA</title>
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-:root{
-  --white:#FFFFFF; --black:#0A0A0A; --red:#FF3145; --red-dim:#E22940;
-  --gray:#9A9A9A; --gray-dim:#6E6E6E; --bg:#0A0A0A; --panel:#151515; --panel2:#1C1C1C; --border:#262626;
-  --r-card:14px; --r-lg:16px;
-}
-*{box-sizing:border-box;}
-body{margin:0;font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:#EDEDED;}
-a{color:inherit;text-decoration:none;}
-button{font-family:inherit;border:none;background:none;cursor:pointer;}
-input,select{font-family:inherit;}
-
-/* ---- guard / loading screens ---- */
-#gate{position:fixed;inset:0;background:var(--black);color:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:999;}
-#gate .brand{font-family:'Georgia',serif;font-style:italic;font-size:26px;}
-#gate .brand b{color:var(--red);font-style:normal;}
-#gate p{font-size:13px;color:#999;margin:0;}
-#gate.hidden{display:none;}
-
-/* ---- shell ---- */
-#app{display:none;min-height:100vh;grid-template-columns:250px 1fr;}
-#app.ready{display:grid;}
-@media (max-width:900px){ #app.ready{grid-template-columns:1fr;} #sidebar{position:fixed;z-index:200;height:100vh;transform:translateX(-100%);transition:transform .25s ease;} #sidebar.open{transform:translateX(0);} }
-
-#sidebar{background:#000;color:#fff;padding:22px 16px;display:flex;flex-direction:column;gap:4px;border-right:1px solid var(--border);}
-.sb-brand{font-size:20px;font-weight:800;letter-spacing:-.01em;padding:8px 10px 20px;}
-.sb-brand span{color:var(--red);}
-.sb-item{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:10px;font-size:13.5px;font-weight:600;color:#8A8A8A;transition:background .15s ease,color .15s ease;}
-.sb-item:hover{background:var(--panel);color:#fff;}
-.sb-item.active{background:var(--panel);color:#fff;}
-.sb-item svg{flex-shrink:0;}
-.sb-sep{height:1px;background:var(--border);margin:14px 4px;}
-.sb-foot{margin-top:auto;padding:10px;}
-.sb-biz{font-size:11px;color:#666;padding:0 10px 8px;text-transform:uppercase;letter-spacing:.05em;}
-
-#main{padding:28px clamp(18px,3vw,40px) 60px;overflow-x:hidden;background:var(--bg);}
-.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:26px;gap:12px;}
-.topbar h1{font-size:22px;font-weight:800;margin:0;color:#fff;}
-.topbar p{margin:2px 0 0;font-size:13px;color:var(--gray);}
-.mobile-toggle{display:none;width:38px;height:38px;border-radius:10px;background:var(--panel);border:1px solid var(--border);align-items:center;justify-content:center;color:#fff;}
-@media (max-width:900px){ .mobile-toggle{display:flex;} }
-
-.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
-@media (max-width:900px){ .stat-grid{grid-template-columns:repeat(2,1fr);} }
-.stat-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--r-card);padding:18px;}
-.stat-card .l{font-size:11.5px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.04em;}
-.stat-card .n{font-size:24px;font-weight:800;margin-top:8px;color:#fff;}
-
-.panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--r-lg);padding:24px;margin-bottom:20px;}
-.panel h2{font-size:16px;font-weight:800;margin:0 0 4px;color:#fff;}
-.panel .sub{font-size:12.5px;color:var(--gray);margin:0 0 18px;}
-
-.btn{display:inline-flex;align-items:center;gap:7px;padding:11px 18px;border-radius:11px;font-size:13.5px;font-weight:700;transition:transform .15s ease,background .15s ease;}
-.btn:active{transform:scale(.97);}
-.btn-primary{background:var(--red);color:#fff;}
-.btn-primary:hover{background:var(--red-dim);}
-.btn-outline{background:var(--panel2);color:#EDEDED;border:1px solid var(--border);}
-.btn-outline:hover{background:#242424;}
-.btn-danger{background:rgba(255,49,69,.12);color:var(--red);font-size:12px;padding:7px 12px;}
-
-table{width:100%;border-collapse:collapse;font-size:13.5px;color:#EDEDED;}
-th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--gray);font-weight:700;padding:0 10px 10px;}
-td{padding:12px 10px;border-top:1px solid var(--border);}
-.badge{font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;}
-.badge.on{background:rgba(30,163,90,.15);color:#3ECF7E;}
-.badge.off{background:var(--panel2);color:var(--gray);}
-.row-actions{display:flex;gap:8px;}
-.icon-btn{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--gray);}
-.icon-btn:hover{background:var(--panel2);color:#fff;}
-
-.empty{text-align:center;padding:40px 20px;color:var(--gray);font-size:13.5px;}
-
-#productModal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:300;padding:20px;}
-#productModal .box{background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:26px;max-width:420px;width:100%;}
-#productModal h3{margin:0 0 18px;font-size:17px;font-weight:800;color:#fff;}
-.field{margin-bottom:14px;}
-.field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px;color:#EDEDED;}
-.field input,.field select{width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;font-size:13.5px;background:var(--panel2);color:#fff;}
-.field-row{display:flex;gap:12px;}
-.field-row .field{flex:1;}
-.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#fff;color:var(--black);padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:400;box-shadow:0 20px 40px -16px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .25s ease;}
-.toast.show{opacity:1;}
-
-/* ---- Chat IA — estilo ChatGPT/iMessage, oscuro ---- */
-.kchat-head{display:flex;align-items:center;gap:10px;padding:16px 22px;background:var(--panel);border-bottom:1px solid var(--border);color:#fff;}
-.kchat-dot{width:8px;height:8px;border-radius:50%;background:#3ECF7E;box-shadow:0 0 0 3px rgba(62,207,126,.18);}
-.kchat-title{font-size:14px;font-weight:700;flex:1;}
-.kchat-status{font-size:11.5px;color:#666;font-weight:600;}
-.kchat-body{padding:22px;min-height:260px;max-height:420px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;background:var(--panel);}
-.kbubble{max-width:78%;padding:12px 16px;font-size:14.5px;line-height:1.55;border-radius:18px;animation:kbIn .25s ease;}
-@keyframes kbIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-.kbubble.bot{background:var(--panel2);color:#EDEDED;border-bottom-left-radius:5px;align-self:flex-start;}
-.kbubble.user{background:var(--red);color:#fff;border-bottom-right-radius:5px;align-self:flex-end;}
-.kbubble.typing{display:flex;gap:5px;align-items:center;padding:15px 16px;}
-.kbubble.typing i{width:6px;height:6px;border-radius:50%;background:#777;display:block;animation:iaTyping 1.2s ease-in-out infinite;}
-.kbubble.typing i:nth-child(2){animation-delay:.18s;}
-.kbubble.typing i:nth-child(3){animation-delay:.36s;}
-@keyframes iaTyping{0%,60%,100%{opacity:.25;}30%{opacity:1;}}
-.kchat-chips{display:flex;flex-wrap:wrap;gap:8px;padding:14px 22px 0;background:var(--panel);}
-.kchip{background:var(--panel2);border:1px solid var(--border);border-radius:999px;padding:9px 15px;font-size:12.5px;font-weight:600;color:var(--gray);}
-.kchip:hover{color:#fff;border-color:#3A3A3A;}
-.kchat-input{display:flex;gap:10px;padding:16px 22px 22px;background:var(--panel);align-items:flex-end;}
-.kchat-input input{flex:1;border:1px solid var(--border);background:var(--panel2);border-radius:14px;padding:14px 18px;font-size:14.5px;font-family:inherit;color:#fff;outline:none;transition:border-color .15s ease;}
-.kchat-input input:focus{border-color:var(--red);}
-.kchat-input input::placeholder{color:#666;}
-.kchat-input button{width:46px;height:46px;border-radius:14px;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s ease,transform .15s ease;}
-.kchat-input button:hover{background:var(--red-dim);}
-.kchat-input button:active{transform:scale(.94);}
-
-/* ---- Mesas y QR ---- */
-.mesa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-top:6px;}
-.mesa-card{border:1px solid var(--border);border-radius:16px;padding:16px;text-align:center;}
-.mesa-card .num{font-size:14px;font-weight:800;margin-bottom:10px;}
-.mesa-card .qrbox{width:150px;height:150px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;background:#fff;}
-.mesa-card .qrbox img,.mesa-card .qrbox canvas{width:100%!important;height:100%!important;}
-.mesa-card .actions{display:flex;gap:8px;justify-content:center;}
-.mesa-card .actions button{font-size:11.5px;padding:7px 10px;}
-
-/* ---- Pedidos ---- */
-.ped-card{border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:12px;background:var(--panel2);}
-.ped-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;}
-.ped-mesa{font-size:14px;font-weight:800;}
-.ped-cliente{font-size:12px;color:var(--gray);margin-top:2px;}
-.ped-badge{font-size:10.5px;font-weight:800;padding:5px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em;}
-.ped-badge.nuevo{background:rgba(255,49,69,.15);color:var(--red);}
-.ped-badge.preparando{background:rgba(255,180,0,.15);color:#FFB800;}
-.ped-badge.listo{background:rgba(62,207,126,.15);color:#3ECF7E;}
-.ped-badge.entregado{background:var(--panel);color:var(--gray);}
-.ped-items{font-size:12.5px;color:#C9C9C9;margin:8px 0;line-height:1.6;}
-.ped-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:10px;}
-.ped-total{font-weight:800;font-size:14px;}
-</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script type="module" src="firebase-init.js"></script>
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="shortcut icon" href="/favicon.ico">
+<script>
+/* aplica tema y acento guardados ANTES de pintar (evita parpadeo) */
+(function(){try{var p=JSON.parse(localStorage.getItem('kartta_prefs')||'{}');
+document.documentElement.setAttribute('data-theme',p.theme==='light'?'light':'dark');
+if(p.accent)document.documentElement.style.setProperty('--accent',p.accent);}catch(e){}})();
+</script>
+<style>
+:root{--accent:#FF3145;--accent-dim:color-mix(in srgb,var(--accent) 82%,#000);--accent-soft:color-mix(in srgb,var(--accent) 14%,transparent);--r:16px;--ease:cubic-bezier(.16,1,.3,1);}
+:root[data-theme=dark]{--bg:#0A0A0A;--panel:#151515;--panel2:#1C1C1C;--border:#262626;--text:#E4E4E4;--strong:#fff;--muted:#8F8F8F;--shadow:0 1px 2px rgba(0,0,0,.4),0 14px 30px -16px rgba(0,0,0,.7);--ok:#3ECF7E;}
+:root[data-theme=light]{--bg:#F3F3F1;--panel:#FFFFFF;--panel2:#F5F5F3;--border:#E6E6E3;--text:#2A2A2A;--strong:#0A0A0A;--muted:#777;--shadow:0 1px 2px rgba(10,10,10,.05),0 14px 30px -14px rgba(10,10,10,.18);--ok:#16A34A;}
+*{box-sizing:border-box;}
+body{margin:0;font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);transition:background .25s ease,color .25s ease;}
+a{color:inherit;text-decoration:none;}button{font-family:inherit;border:none;background:none;cursor:pointer;color:inherit;}
+input,select,textarea{font-family:inherit;color:var(--strong);}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+
+#gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;z-index:999;}
+#gate .brand{font-family:Georgia,serif;font-style:italic;font-size:26px;color:var(--strong);}#gate .brand b{color:var(--accent);font-style:normal;}
+#gate p{font-size:13px;color:var(--muted);margin:0;}#gate.hidden{display:none;}
+
+#app{display:none;min-height:100vh;grid-template-columns:260px 1fr;}#app.ready{display:grid;}
+#sidebar{background:var(--panel);border-right:1px solid var(--border);padding:20px 14px;display:flex;flex-direction:column;gap:2px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.sb-brand{font-size:21px;font-weight:800;padding:6px 10px 16px;color:var(--strong);}.sb-brand span{color:var(--accent);}
+.sb-label{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:14px 12px 6px;}
+.sb-item{display:flex;align-items:center;gap:11px;width:100%;padding:11px 12px;border-radius:12px;font-size:13.5px;font-weight:600;color:var(--muted);text-align:left;transition:background .15s ease,color .15s ease,transform .15s ease;}
+.sb-item:hover{background:var(--panel2);color:var(--strong);}
+.sb-item.active{background:var(--accent-soft);color:var(--accent);}
+.sb-item svg{flex-shrink:0;}.sb-item .lk{margin-left:auto;font-size:9.5px;font-weight:800;padding:3px 7px;border-radius:999px;background:var(--panel2);color:var(--muted);}
+.sb-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--border);}
+.sb-biz{display:flex;align-items:center;gap:10px;padding:8px 10px 10px;font-size:12.5px;font-weight:700;color:var(--strong);}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;overflow:hidden;flex-shrink:0;}.avatar img{width:100%;height:100%;object-fit:cover;}
+
+#main{padding:28px clamp(16px,3vw,44px) 60px;min-width:0;}
+.topbar{display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+.menu-btn{display:none;width:44px;height:44px;border-radius:12px;background:var(--panel);box-shadow:var(--shadow);align-items:center;justify-content:center;}
+.hello{font-size:clamp(34px,5vw,58px);font-weight:800;letter-spacing:-.02em;line-height:1.05;margin:0;color:var(--strong);}
+.hello span{color:var(--accent);}
+.hello-sub{font-size:14.5px;color:var(--muted);margin:8px 0 26px;}
+.view{display:none;animation:vin .3s var(--ease);}.view.active{display:block;}
+@keyframes vin{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+.vhead{margin-bottom:22px;}.vhead h2{font-size:clamp(24px,3vw,32px);font-weight:800;letter-spacing:-.01em;margin:0 0 6px;color:var(--strong);}.vhead p{margin:0;color:var(--muted);font-size:14px;max-width:62ch;}
+
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:22px;box-shadow:var(--shadow);margin-bottom:18px;}
+.card h3{font-size:15px;font-weight:800;margin:0 0 4px;color:var(--strong);}.card .sub{font-size:12.5px;color:var(--muted);margin:0 0 16px;}
+.grid-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:18px;}
+.sum{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);transition:transform .2s var(--ease);cursor:default;}
+.sum.link{cursor:pointer;}.sum.link:hover{transform:translateY(-3px);}
+.sum .l{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+.sum .n{font-size:24px;font-weight:800;margin-top:8px;color:var(--strong);}.sum .n small{font-size:13px;color:var(--muted);font-weight:600;}
+.sum .s{font-size:12px;color:var(--muted);margin-top:4px;}
+.bar{height:6px;background:var(--panel2);border-radius:99px;overflow:hidden;margin-top:10px;}.bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .5s var(--ease);}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:4px 9px;border-radius:99px;}
+.pill.ok{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok);}.pill.pend{background:var(--panel2);color:var(--muted);}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:0 18px;border-radius:12px;font-size:13.5px;font-weight:700;transition:transform .15s var(--ease),background .15s ease,box-shadow .15s ease;}
+.btn:hover{transform:translateY(-1px);}.btn:active{transform:scale(.98);}
+.btn-accent{background:var(--accent);color:#fff;}.btn-accent:hover{background:var(--accent-dim);}
+.btn-ghost{background:var(--panel2);border:1px solid var(--border);color:var(--strong);}.btn-ghost:hover{background:var(--border);}
+.btn-danger{background:rgba(255,49,69,.12);color:#FF3145;}
+.btn-sm{min-height:36px;padding:0 12px;font-size:12px;border-radius:10px;}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}.row.between{justify-content:space-between;}
+
+.field{margin-bottom:14px;}.field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px;color:var(--text);}
+.field input[type=text],.field input[type=number],.field input[type=tel],.field textarea,.field select{width:100%;min-height:44px;padding:11px 13px;border:1px solid var(--border);border-radius:12px;font-size:14px;background:var(--panel2);transition:border-color .15s ease,box-shadow .15s ease;}
+.field textarea{resize:vertical;min-height:84px;line-height:1.5;}
+.field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+input[type=color]{width:100%;height:44px;border:1px solid var(--border);border-radius:12px;background:var(--panel2);padding:4px;cursor:pointer;}
+.seg{display:inline-flex;background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:3px;gap:2px;}
+.seg button{min-height:38px;padding:0 14px;border-radius:9px;font-size:12.5px;font-weight:700;color:var(--muted);transition:background .15s ease,color .15s ease;}
+.seg button.on{background:var(--accent);color:#fff;}
+.sw{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--border);font-size:13.5px;font-weight:600;}
+.sw input{appearance:none;width:42px;height:24px;border-radius:99px;background:var(--border);position:relative;cursor:pointer;transition:background .2s ease;flex-shrink:0;}
+.sw input::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s var(--ease);}
+.sw input:checked{background:var(--accent);}.sw input:checked::after{transform:translateX(18px);}
+.accents{display:flex;gap:10px;flex-wrap:wrap;}
+.acc{width:44px;height:44px;border-radius:50%;border:3px solid transparent;box-shadow:0 0 0 1px var(--border);transition:transform .15s var(--ease);}
+.acc:hover{transform:scale(1.08);}.acc.on{border-color:var(--panel);box-shadow:0 0 0 3px var(--strong);}
+
+/* imagen subida */
+.imgbox{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.imgprev{width:84px;height:84px;border-radius:16px;background:var(--panel2);border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--muted);font-size:11px;text-align:center;flex-shrink:0;}
+.imgprev.round{border-radius:50%;}.imgprev img{width:100%;height:100%;object-fit:cover;}
+.imgprev.wide{width:100%;max-width:300px;height:96px;}
+
+/* productos */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;}
+.pcard{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);transition:transform .2s var(--ease);}
+.pcard:hover{transform:translateY(-3px);}
+.pimg{height:140px;background:var(--panel2);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;}.pimg img{width:100%;height:100%;object-fit:cover;}
+.pbody{padding:14px;}.pname{font-weight:800;font-size:14.5px;color:var(--strong);}.pdesc{font-size:12.5px;color:var(--muted);margin:4px 0 8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em;}
+.pprice{font-weight:800;font-size:15px;color:var(--strong);}.pprice s{font-size:12px;color:var(--muted);font-weight:600;margin-left:6px;}
+.pcat{font-size:11px;font-weight:700;color:var(--accent);margin-bottom:4px;}
+.pact{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;}
+.empty{text-align:center;padding:44px 20px;}.empty .ic{width:56px;height:56px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;}
+.empty h3{font-size:17px;margin:0 0 6px;color:var(--strong);}.empty p{color:var(--muted);font-size:13.5px;margin:0 0 18px;}
+
+/* locks */
+.lockrow{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:13px 14px;border:1px dashed var(--border);border-radius:12px;margin-bottom:10px;font-size:13.5px;font-weight:700;text-align:left;transition:border-color .15s ease,background .15s ease;}
+.lockrow:hover{border-color:var(--accent);background:var(--accent-soft);}
+.badge-lock{font-size:10.5px;font-weight:800;padding:4px 9px;border-radius:99px;background:var(--panel2);color:var(--muted);white-space:nowrap;}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:20px;z-index:500;}
+.modal-bg.show{display:flex;animation:vin .2s ease;}
+.modal{background:var(--panel);border:1px solid var(--border);border-radius:22px;padding:26px;width:100%;max-width:440px;max-height:92vh;overflow-y:auto;box-shadow:0 30px 80px -20px rgba(0,0,0,.6);}
+.modal.lg{max-width:520px;}.modal h3{margin:0 0 6px;font-size:19px;font-weight:800;color:var(--strong);}.modal .sub{color:var(--muted);font-size:13.5px;margin:0 0 18px;}
+.lock-ic{width:54px;height:54px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;margin-bottom:14px;}
+
+/* editor + preview */
+.editor{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:20px;align-items:start;}
+.pvpanel{position:sticky;top:16px;}
+.pvbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap;}
+.pvstage{background:var(--panel2);border:1px solid var(--border);border-radius:20px;padding:18px;display:flex;justify-content:center;overflow:hidden;}
+.pv-pc{width:100%;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:#fff;}
+.pv-pc .chrome{height:28px;background:#ECECEA;display:flex;align-items:center;gap:6px;padding:0 12px;}.pv-pc .chrome i{width:8px;height:8px;border-radius:50%;background:#C9C9C6;}
+.pv-pc .scr{max-height:620px;overflow-y:auto;}
+.pv-phone{width:320px;max-width:100%;border:9px solid #111;border-radius:36px;overflow:hidden;background:#fff;box-shadow:0 20px 40px -16px rgba(0,0,0,.5);}
+.pv-phone .scr{height:600px;overflow-y:auto;}
+/* menú renderizado (preview) */
+.mp{--p:#FF3145;--s:#0A0A0A;--rad:18px;--fs:1;font-family:Inter,sans-serif;background:#fff;color:#111;font-size:calc(14px*var(--fs));}
+.mp .ban{height:130px;background:var(--s) center/cover;position:relative;}
+.mp .prof{display:flex;align-items:flex-end;gap:14px;padding:0 18px;margin-top:-34px;position:relative;}
+.mp .logo{width:76px;height:76px;border-radius:50%;background:var(--p);border:4px solid #fff;color:#fff;font-weight:800;font-size:28px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;}.mp .logo img{width:100%;height:100%;object-fit:cover;}
+.mp .nm{font-weight:800;font-size:calc(19px*var(--fs));line-height:1.15;padding-bottom:4px;}
+.mp .meta{display:flex;flex-wrap:wrap;gap:8px;padding:10px 18px 0;font-size:calc(12px*var(--fs));color:#666;align-items:center;}
+.mp .meta a{color:var(--p);font-weight:700;}.mp .tag{padding:0 18px;font-size:calc(12.5px*var(--fs));color:#777;margin-top:8px;}
+.mp .ex{font-size:10px;background:#F1F1EF;border-radius:99px;padding:2px 7px;}
+.mp .cat{font-weight:800;font-size:calc(12px*var(--fs));text-transform:uppercase;letter-spacing:.05em;color:var(--s);padding:18px 18px 8px;}
+.mp .it{display:flex;gap:12px;margin:0 14px 10px;padding:12px;border:1px solid #EEE;border-radius:var(--rad);align-items:center;background:#fff;}
+.mp.soft .it{border:none;box-shadow:0 8px 20px -10px rgba(0,0,0,.2);}
+.mp .it img{width:62px;height:62px;border-radius:calc(var(--rad)*.6);object-fit:cover;flex-shrink:0;}
+.mp .it .t{font-weight:700;}.mp .it .d{font-size:calc(12px*var(--fs));color:#777;margin-top:2px;}
+.mp .it .pr{font-weight:800;margin-top:4px;}.mp .it .pr s{font-weight:500;color:#999;font-size:.85em;margin-left:5px;}
+.mp .add{margin-left:auto;flex-shrink:0;width:34px;height:34px;border-radius:99px;background:var(--p);color:#fff;font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;}
+.mp.outline .add{background:#fff;color:var(--p);border:2px solid var(--p);}
+.mp .none{padding:34px 18px;text-align:center;color:#999;font-size:13px;}
+
+/* chat IA */
+.aiwrap{position:relative;}
+.chat{display:flex;flex-direction:column;height:min(560px,70vh);}
+.msgs{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px;}
+.bub{max-width:80%;padding:12px 15px;border-radius:16px;font-size:14px;line-height:1.55;animation:vin .25s ease;white-space:pre-wrap;}
+.bub.bot{background:var(--panel2);align-self:flex-start;border-bottom-left-radius:4px;}.bub.me{background:var(--accent);color:#fff;align-self:flex-end;border-bottom-right-radius:4px;}
+.bub.typing{display:flex;gap:5px;padding:15px;}.bub.typing i{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:ty 1.2s infinite;}.bub.typing i:nth-child(2){animation-delay:.18s}.bub.typing i:nth-child(3){animation-delay:.36s}
+@keyframes ty{0%,60%,100%{opacity:.25}30%{opacity:1}}
+.cin{display:flex;gap:10px;padding:14px;border-top:1px solid var(--border);align-items:flex-end;}
+.cin textarea{flex:1;min-height:46px;max-height:120px;padding:12px 14px;border:1px solid var(--border);border-radius:14px;background:var(--panel2);resize:none;font-size:14px;}
+.cin textarea:focus{outline:none;border-color:var(--accent);}
+.cin button{width:46px;height:46px;border-radius:14px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.cin button:disabled{opacity:.45;}
+.lockov{position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 55%,transparent);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:24px;border-radius:var(--r);z-index:2;}
+.lockov h3{margin:0 0 6px;font-size:18px;color:var(--strong);}.lockov p{margin:0 0 16px;color:var(--muted);font-size:13.5px;}
+
+/* pedidos / mesas / clientes */
+.ped{border:1px solid var(--border);border-radius:14px;padding:15px 17px;margin-bottom:12px;background:var(--panel2);}
+.ped .top{display:flex;justify-content:space-between;gap:10px;align-items:center;}
+.ped .mesa{font-weight:800;color:var(--strong);}.ped .cli{font-size:12px;color:var(--muted);margin-top:2px;}
+.ped .items{font-size:12.5px;margin:8px 0;line-height:1.6;color:var(--text);}
+.ped .bot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+.st{font-size:10.5px;font-weight:800;padding:5px 10px;border-radius:99px;text-transform:uppercase;}
+.st.nuevo{background:var(--accent-soft);color:var(--accent);}.st.preparando{background:rgba(255,184,0,.15);color:#E5A400;}.st.listo{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok);}.st.entregado{background:var(--panel);color:var(--muted);}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;}
+.mcard{border:1px solid var(--border);border-radius:16px;padding:16px;text-align:center;background:var(--panel2);}
+.qrbox{width:150px;height:150px;margin:10px auto 12px;background:#fff;padding:6px;border-radius:10px;}.qrbox img,.qrbox canvas{width:100%!important;height:100%!important;}
+.urlbox{display:flex;gap:8px;align-items:center;background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:6px 6px 6px 14px;font-size:13px;word-break:break-all;}
+.urlbox span{flex:1;min-width:0;}
+.three{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;}
+
+.toast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom));transform:translate(-50%,10px);background:var(--strong);color:var(--bg);padding:12px 20px;border-radius:12px;font-size:13px;font-weight:700;z-index:900;opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s var(--ease);max-width:90vw;}
+.toast.show{opacity:1;transform:translate(-50%,0);}
+#tabbar{display:none;}
+.scrim{display:none;}
+
+@media (max-width:900px){
+  #app.ready{grid-template-columns:1fr;}
+  #sidebar{position:fixed;z-index:300;left:0;top:0;width:280px;max-width:84vw;transform:translateX(-102%);transition:transform .25s var(--ease);box-shadow:20px 0 50px rgba(0,0,0,.4);}
+  #sidebar.open{transform:none;}
+  .scrim.show{display:block;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:250;}
+  .menu-btn{display:flex;}
+  #main{padding:18px 16px calc(96px + env(safe-area-inset-bottom));}
+  #tabbar{display:flex;position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:200;background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:6px;gap:4px;box-shadow:var(--shadow);}
+  #tabbar button{flex:1;min-height:48px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10px;font-weight:700;color:var(--muted);}
+  #tabbar button.active{background:var(--accent-soft);color:var(--accent);}
+  .editor{grid-template-columns:1fr;}.pvpanel{position:static;}
+  .f2{grid-template-columns:1fr;}
+  .pgrid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));}
+  .hello{font-size:clamp(32px,9vw,44px);}
+}
+</style>
 </head>
 <body>
 
-<div id="gate">
-  <div class="brand">Kar<b>tt</b>a</div>
-  <p id="gateMsg">Verificando tu sesión…</p>
-</div>
+<div id="gate"><div class="brand">Kar<b>tt</b>a</div><p id="gateMsg">Verificando tu sesión…</p></div>
 
 <div id="app">
-  <aside id="sidebar">
+  <aside id="sidebar" aria-label="Navegación">
     <div class="sb-brand">Kar<span>tt</span>a</div>
-    <button class="sb-item active" data-view="inicio">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>
-      Inicio
-    </button>
-    <button class="sb-item" data-view="productos">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
-      Menú y productos
-    </button>
-    <button class="sb-item" data-view="mesas">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M3 11h18M8 7V5h8v2"/></svg>
-      Mesas y QR
-    </button>
-    <button class="sb-item" data-view="pedidos">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v4H4zM4 12h16M4 16h10M4 20h6"/></svg>
-      Pedidos
-    </button>
-    <button class="sb-item" data-view="clientes">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.5-4 4-6 7-6s5.5 2 7 6"/></svg>
-      Clientes
-    </button>
-    <button class="sb-item" data-view="ia">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"/></svg>
-      Asistente IA
-    </button>
-    <button class="sb-item" data-view="configuracion">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.7 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      Configuración
-    </button>
-    <div class="sb-sep"></div>
+    <div class="sb-label">Principal</div>
+    <button class="sb-item active" data-view="inicio"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>Inicio</button>
+    <button class="sb-item" data-view="productos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>Productos</button>
+    <button class="sb-item" data-view="menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/></svg>Mi menú</button>
+    <button class="sb-item" data-view="personalizar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 22a10 10 0 1 1 10-10c0 2.5-2 3-4 3h-2a2 2 0 0 0-1 3.7c.7.5.4 3.3-3 3.3z"/></svg>Personalizar</button>
+    <button class="sb-item" data-view="configuracion"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Configuración</button>
+    <button class="sb-item" data-view="ia"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/></svg>Asistente IA<span class="lk" id="lkIA">PRO</span></button>
+    <button class="sb-item" data-view="dominio"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>Dominio</button>
+    <div class="sb-label">Operación</div>
+    <button class="sb-item" data-view="pedidos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v4H4zM4 12h16M4 16h10M4 20h6"/></svg>Pedidos</button>
+    <button class="sb-item" data-view="mesas"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9h18M5 9v10M19 9v10M8 9V5h8v4"/></svg>Mesas y QR</button>
+    <button class="sb-item" data-view="clientes"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.5-4 4-6 7-6s5.5 2 7 6"/></svg>Clientes</button>
     <div class="sb-foot">
-      <div class="sb-biz" id="sbBiz">Cargando negocio…</div>
-      <button class="sb-item" id="btnLogout" style="width:100%;">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-        Cerrar sesión
-      </button>
+      <div class="sb-biz"><div class="avatar" id="sbAvatar">K</div><span id="sbBiz">—</span></div>
+      <button class="sb-item" id="btnLogout"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Cerrar sesión</button>
     </div>
   </aside>
+  <div class="scrim" id="scrim"></div>
 
   <main id="main">
-    <div class="topbar">
-      <button class="mobile-toggle" id="mobileToggle" aria-label="Abrir menú">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-      </button>
-      <div>
-        <h1 id="greeting">Hola de nuevo</h1>
-        <p id="bizLine">—</p>
-      </div>
-      <a href="kartta.html" class="btn btn-outline">Ver mi página pública</a>
-    </div>
+    <div class="topbar"><button class="menu-btn" id="menuBtn" aria-label="Abrir menú"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div>
 
-    <!-- ===== VISTA: INICIO ===== -->
-    <section data-panel="inicio">
-      <div class="stat-grid">
-        <div class="stat-card"><div class="l">Ventas hoy</div><div class="n" id="statVentasHoy">$0</div></div>
-        <div class="stat-card"><div class="l">Pedidos hoy</div><div class="n" id="statPedidosHoy">0</div></div>
-        <div class="stat-card"><div class="l">Clientes</div><div class="n" id="statClientes">0</div></div>
-        <div class="stat-card"><div class="l">Plan actual</div><div class="n" id="statPlan" style="font-size:16px;">—</div></div>
+    <!-- INICIO -->
+    <section class="view active" data-panel="inicio">
+      <h1 class="hello">Hola, <span id="helloName">—</span></h1>
+      <p class="hello-sub" id="helloSub">Este es tu espacio dentro de KARTTA.</p>
+      <div class="grid-sum">
+        <div class="sum link" data-goto="productos"><div class="l">Productos</div><div class="n" id="sumProd">0 <small>/ 20</small></div><div class="bar"><i id="sumProdBar" style="width:0%"></i></div></div>
+        <div class="sum link" data-goto="ia"><div class="l">Tokens IA</div><div class="n" id="sumTokens">—</div><div class="s" id="sumTokensSub">Plan PRO</div></div>
+        <div class="sum link" data-goto="menu"><div class="l">Menú</div><div class="n" id="sumMenu" style="font-size:17px">—</div></div>
+        <div class="sum link" data-goto="dominio"><div class="l">Dominio</div><div class="n" id="sumDom" style="font-size:17px">—</div></div>
+        <div class="sum link" data-goto="configuracion"><div class="l">Perfil</div><div class="n" id="sumPerfil">0%</div><div class="bar"><i id="sumPerfilBar" style="width:0%"></i></div></div>
       </div>
-      <p class="sub" style="margin-top:-6px;">Productos activos: <b id="statProductos" style="color:#fff;">—</b></p>
-      <div class="panel">
-        <h2>Bienvenido a tu panel</h2>
-        <p class="sub">Empieza cargando tu menú — es lo primero que verán tus clientes al escanear el QR.</p>
-        <button class="btn btn-primary" data-goto="productos">Cargar mi menú →</button>
+      <div class="grid-sum">
+        <div class="sum"><div class="l">Ventas hoy</div><div class="n" id="statVentas">$0</div></div>
+        <div class="sum"><div class="l">Pedidos hoy</div><div class="n" id="statPedidos">0</div></div>
+        <div class="sum"><div class="l">Clientes</div><div class="n" id="statClientes">0</div></div>
+        <div class="sum"><div class="l">Plan</div><div class="n" id="statPlan" style="font-size:17px">—</div></div>
+      </div>
+      <div class="card">
+        <h3>Siguientes pasos</h3><p class="sub">Lo esencial para dejar tu menú listo.</p>
+        <div class="row">
+          <button class="btn btn-accent" data-goto="productos">Agregar productos</button>
+          <button class="btn btn-ghost" data-goto="personalizar">Personalizar mi menú</button>
+          <a class="btn btn-ghost" id="homeMenuLink" href="#" target="_blank" rel="noopener">Ver mi menú</a>
+        </div>
       </div>
     </section>
 
-    <!-- ===== VISTA: PRODUCTOS ===== -->
-    <section data-panel="productos" style="display:none;">
-      <div class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:4px;">
-          <div>
-            <h2>Menú y productos</h2>
-            <p class="sub">Lo que agregues aquí aparece al instante en tu menú público.</p>
+    <!-- PRODUCTOS -->
+    <section class="view" data-panel="productos">
+      <div class="vhead row between"><div><h2>Mis productos</h2><p>Crea y edita lo que aparece en tu menú. Se publican al instante.</p></div><button class="btn btn-accent" id="btnNuevoProducto">+ Agregar producto</button></div>
+      <div class="pgrid" id="pgrid"></div>
+      <div class="card empty" id="prodEmpty" style="display:none">
+        <div class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg></div>
+        <h3>Aún no tienes productos</h3><p>Agrega tu primer producto para comenzar a construir tu menú.</p>
+        <button class="btn btn-accent" data-newprod>Agregar producto</button>
+      </div>
+    </section>
+
+    <!-- MI MENÚ -->
+    <section class="view" data-panel="menu">
+      <div class="vhead"><h2>Mi menú digital</h2><p>Aquí construyes, previsualizas y compartes tu menú.</p></div>
+      <div class="card">
+        <div class="row between"><div><h3>Estado</h3><p class="sub" style="margin:0" id="menuStateTxt">—</p></div><span class="pill pend" id="menuStatePill">Pendiente</span></div>
+      </div>
+      <div class="three">
+        <div class="card"><h3>Productos</h3><p class="sub">Administra lo que vendes.</p><button class="btn btn-ghost" data-goto="productos">Administrar productos</button></div>
+        <div class="card"><h3>Personalizar</h3><p class="sub">Colores, estilo, banner y más, con vista previa.</p><button class="btn btn-accent" data-goto="personalizar">Abrir editor</button></div>
+        <div class="card"><h3>Ver mi menú</h3><p class="sub">Así lo ven tus clientes.</p><div class="row"><a class="btn btn-ghost" id="menuOpen" href="#" target="_blank" rel="noopener">Abrir menú</a><button class="btn btn-ghost" id="menuCopy">Copiar enlace</button></div></div>
+      </div>
+    </section>
+
+    <!-- PERSONALIZAR -->
+    <section class="view" data-panel="personalizar">
+      <div class="vhead row between"><div><h2>Personalizar mi menú</h2><p>Cada cambio se ve de inmediato en la vista previa.</p></div><button class="btn btn-accent" id="btnSaveMenu">Guardar diseño</button></div>
+      <div class="editor">
+        <div>
+          <div class="card">
+            <h3>Colores</h3><p class="sub">Dale la identidad de tu negocio.</p>
+            <div class="f2"><div class="field"><label>Color principal</label><input type="color" id="msPrimary"></div><div class="field"><label>Color secundario</label><input type="color" id="msSecondary"></div></div>
           </div>
-          <button class="btn btn-primary" id="btnNuevoProducto">+ Nuevo producto</button>
-        </div>
-        <table id="tablaProductos" style="display:none;">
-          <thead><tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Estado</th><th></th></tr></thead>
-          <tbody id="tbodyProductos"></tbody>
-        </table>
-        <div class="empty" id="productosEmpty">Todavía no tienes productos. Crea el primero.</div>
-      </div>
-    </section>
-
-    <!-- ===== VISTA: PEDIDOS ===== -->
-        <!-- ===== VISTA: MESAS Y QR ===== -->
-    <section data-panel="mesas" style="display:none;">
-      <div class="panel">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:4px;">
-          <div>
-            <h2>Mesas y códigos QR</h2>
-            <p class="sub">Imprime el QR de cada mesa. Tu cliente lo escanea y cae directo en tu menú.</p>
+          <div class="card">
+            <h3>Estilo</h3><p class="sub">Tarjetas, botones y tamaño.</p>
+            <div class="field"><label>Tarjetas</label><div class="seg" data-seg="cardStyle"><button data-v="round">Redondas</button><button data-v="soft">Suaves</button><button data-v="square">Rectas</button></div></div>
+            <div class="field"><label>Botón agregar</label><div class="seg" data-seg="buttonStyle"><button data-v="solid">Relleno</button><button data-v="outline">Borde</button></div></div>
+            <div class="field"><label>Tamaño de elementos</label><div class="seg" data-seg="size"><button data-v="s">Pequeño</button><button data-v="m">Normal</button><button data-v="l">Grande</button></div></div>
           </div>
-          <button class="btn btn-primary" id="btnNuevaMesa">+ Nueva mesa</button>
+          <div class="card">
+            <h3>Contenido</h3><p class="sub">Qué se muestra en cada producto.</p>
+            <div class="field"><label>Frase bajo el nombre</label><input type="text" id="msTagline" maxlength="80" placeholder="Ej: Buen sabor, siempre."></div>
+            <label class="sw">Mostrar imágenes<input type="checkbox" id="msImgs"></label>
+            <label class="sw">Mostrar descripciones<input type="checkbox" id="msDescs"></label>
+            <label class="sw">Mostrar precios<input type="checkbox" id="msPrices"></label>
+          </div>
+          <div class="card">
+            <h3>Banner</h3><p class="sub">Imagen grande detrás de tu logo.</p>
+            <div class="imgbox"><div class="imgprev wide" id="bannerPrev">Sin banner</div>
+              <div class="row"><button class="btn btn-ghost btn-sm" id="bannerPick">Subir banner</button><button class="btn btn-danger btn-sm" id="bannerDel">Quitar</button></div></div>
+            <input type="file" id="bannerFile" accept="image/*" hidden>
+            <p class="sub" style="margin:12px 0 0">Tu logo, nombre y dirección se editan en <a href="#" data-goto="configuracion" style="color:var(--accent);font-weight:700">Configuración</a>.</p>
+          </div>
+          <button class="lockrow" data-lock="PREMIUM"><span>Personalización avanzada (tipografías, secciones, CSS)</span><span class="badge-lock">🔒 PREMIUM</span></button>
         </div>
-        <div class="mesa-grid" id="mesaGrid"></div>
-        <div class="empty" id="mesasEmpty">Todavía no tienes mesas creadas.</div>
+        <div class="pvpanel">
+          <div class="pvbar"><strong style="color:var(--strong)">Vista previa</strong><div class="seg" id="pvDevice"><button data-v="pc">PC</button><button data-v="mobile" class="on">Celular</button></div></div>
+          <div class="pvstage" id="pvStage"></div>
+        </div>
       </div>
     </section>
 
-    <section data-panel="pedidos" style="display:none;">
-      <div class="panel">
-        <h2>Pedidos</h2>
-        <p class="sub">En tiempo real. Toca "Avanzar" para mover el pedido al siguiente estado.</p>
-        <div id="pedidosList"></div>
-        <div class="empty" id="pedidosEmpty">Aún no hay pedidos.</div>
+    <!-- CONFIGURACIÓN -->
+    <section class="view" data-panel="configuracion">
+      <div class="vhead"><h2>Configuración</h2><p>La información de tu negocio y las preferencias de tu panel.</p></div>
+      <div class="card">
+        <h3>Logo / foto de perfil</h3><p class="sub">Se usa en tu panel, tu menú y la vista previa.</p>
+        <div class="imgbox"><div class="imgprev round" id="logoPrev">Sin logo</div>
+          <div class="row"><button class="btn btn-ghost btn-sm" id="logoPick">Cambiar imagen</button><button class="btn btn-danger btn-sm" id="logoDel">Eliminar</button></div></div>
+        <input type="file" id="logoFile" accept="image/*" hidden>
+      </div>
+      <div class="card">
+        <h3>Datos del negocio</h3><p class="sub">Aparecen en tu menú público.</p>
+        <div class="field"><label>Nombre del negocio</label><input type="text" id="cfgNombre" maxlength="60"></div>
+        <div class="field"><label>Descripción</label><textarea id="cfgDesc" maxlength="240"></textarea></div>
+        <div class="f2"><div class="field"><label>Teléfono</label><input type="tel" id="cfgTel"></div><div class="field"><label>WhatsApp</label><input type="tel" id="cfgWpp"></div></div>
+        <div class="field"><label>Dirección del negocio</label><input type="text" id="cfgDir" placeholder="Calle, número, ciudad"></div>
+        <p class="sub" style="margin-top:-6px">En tu menú aparecerá “📍 Ver ubicación”, que abre Google Maps con esta dirección.</p>
+        <button class="btn btn-accent" id="btnSaveCfg">Guardar cambios</button>
+      </div>
+      <div class="card">
+        <h3>Color de acento</h3><p class="sub">Cambia botones, estados y tu nombre en el panel.</p>
+        <div class="accents" id="accents"></div>
+      </div>
+      <div class="card">
+        <h3>Apariencia</h3><p class="sub">Elige cómo quieres ver tu panel.</p>
+        <div class="seg" id="themeSeg"><button data-v="dark">Oscuro</button><button data-v="light">Claro</button></div>
       </div>
     </section>
 
-    <!-- ===== VISTA: CLIENTES ===== -->
-    <section data-panel="clientes" style="display:none;">
-      <div class="panel">
-        <h2>Clientes</h2>
-        <p class="sub">Se agregan solos con cada pedido — ordenados por cuánto te han comprado.</p>
-        <div id="clientesList"></div>
-        <div class="empty" id="clientesEmpty">Aún no hay clientes registrados.</div>
+    <!-- IA -->
+    <section class="view" data-panel="ia">
+      <div class="vhead row between"><div><h2>Asistente IA</h2><p>Pregunta sobre tu negocio, ideas para vender más y más.</p></div><div class="sum" style="padding:12px 18px;margin:0"><div class="l">Tokens de IA</div><div class="n" id="aiTokens" style="font-size:20px;margin-top:4px">—</div></div></div>
+      <div class="aiwrap card" style="padding:0">
+        <div class="lockov" id="aiLock" style="display:none"><div class="lock-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h3>El asistente de KARTTA es PRO</h3><p>Actualiza tu plan para utilizar el asistente.</p><button class="btn btn-accent" data-lock="PRO">Ver planes</button></div>
+        <div class="chat">
+          <div class="msgs" id="msgs"><div class="bub bot" id="aiHello">Hola 👋 Soy tu asistente de KARTTA. ¿En qué te ayudo hoy?</div></div>
+          <form class="cin" id="aiForm"><textarea id="aiText" rows="1" placeholder="Pregunta lo que quieras…" aria-label="Mensaje"></textarea><button type="submit" id="aiSend" aria-label="Enviar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></form>
+        </div>
       </div>
     </section>
 
-    <!-- ===== VISTA: IA ===== -->
-    <section data-panel="ia" style="display:none;">
-      <div class="panel" style="padding:0;overflow:hidden;">
-        <div class="kchat-head">
-          <span class="kchat-dot"></span>
-          <span class="kchat-title">Asistente de tu negocio</span>
-          <span class="kchat-status">En línea</span>
-        </div>
-        <div class="kchat-body" id="iaBody">
-          <div class="kbubble bot" id="iaGreeting">Hola, soy tu asistente de KARTTA 👋<br>Pregúntame por tus ventas, tu menú o pídeme que ajuste un precio — por ahora respondo en modo demo hasta que conectes el backend de IA.</div>
-        </div>
-        <div class="kchat-chips">
-          <button class="kchip" data-q="¿Cómo van mis ventas hoy?">¿Cómo van mis ventas hoy?</button>
-          <button class="kchip" data-q="¿Cuántos productos tengo activos?">¿Cuántos productos tengo?</button>
-          <button class="kchip" data-q="Sube el precio de la hamburguesa a 28000">Sube un precio</button>
-        </div>
-        <form class="kchat-input" id="iaForm">
-          <input id="iaText" type="text" placeholder="Escribe tu pregunta..." autocomplete="off">
-          <button type="submit" aria-label="Enviar">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          </button>
-        </form>
+    <!-- DOMINIO -->
+    <section class="view" data-panel="dominio">
+      <div class="vhead"><h2>Dominio y enlaces</h2><p>Dónde vive tu negocio en internet.</p></div>
+      <div class="three">
+        <div class="card"><div class="row between"><h3>Mi menú</h3><span class="pill ok">Activo</span></div><p class="sub">Lo que ven tus clientes al escanear el QR.</p><div class="urlbox"><span id="urlMenu">—</span><button class="btn btn-ghost btn-sm" id="copyMenu">Copiar</button></div></div>
+        <div class="card"><div class="row between"><h3>Mi página</h3><span class="pill pend">Pendiente</span></div><p class="sub">Tu página web pública. Próximamente.</p></div>
+        <div class="card"><div class="row between"><h3>Mi administración</h3><span class="pill ok">Activo</span></div><p class="sub">Este panel.</p><div class="urlbox"><span id="urlAdmin">—</span></div></div>
+      </div>
+      <div class="card">
+        <div class="row between"><h3>Dominio propio</h3><span class="pill pend" id="domPill">Pendiente</span></div>
+        <p class="sub">Cuando tengas tu dominio (ej. mirestaurante.co), agrégalo primero en Vercel → Settings → Domains y escríbelo aquí.</p>
+        <div class="field"><label>Tu dominio (sin https://)</label><input type="text" id="cfgDominio" placeholder="mirestaurante.co"></div>
+        <button class="btn btn-accent" id="btnDominio">Conectar dominio</button>
       </div>
     </section>
 
-    <!-- ===== VISTA: CONFIGURACIÓN ===== -->
-    <section data-panel="configuracion" style="display:none;">
-      <div class="panel">
-        <h2>Datos del negocio</h2>
-        <p class="sub">Esta información aparece en tu menú público.</p>
-        <div class="field-row">
-          <div class="field"><label>Nombre del negocio</label><input id="cfgNombre" type="text"></div>
-        </div>
-        <button class="btn btn-primary" id="btnGuardarConfig">Guardar cambios</button>
-      </div>
+    <!-- PEDIDOS -->
+    <section class="view" data-panel="pedidos">
+      <div class="vhead"><h2>Pedidos</h2><p>En tiempo real. Avanza cada pedido al siguiente estado.</p></div>
+      <div id="pedList"></div>
+      <div class="card empty" id="pedEmpty"><div class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v4H4zM4 12h16M4 16h10"/></svg></div><h3>Aún no hay pedidos</h3><p>Cuando un cliente pida desde tu menú, aparecerá aquí.</p></div>
+    </section>
 
-      <div class="panel">
-        <h2>Dominio propio</h2>
-        <p class="sub">Por ahora tu menú vive en esta web. Cuando tengas tu propio dominio (ej. mirestaurante.co), agrégalo primero en Vercel → Settings → Domains, y después ponlo aquí para que apunte a tu negocio automáticamente.</p>
-        <div class="field-row">
-          <div class="field"><label>Tu dominio (sin https://)</label><input id="cfgDominio" type="text" placeholder="mirestaurante.co"></div>
-        </div>
-        <button class="btn btn-outline" id="btnGuardarDominio">Conectar dominio</button>
-        <p id="dominioActual" style="font-size:12.5px;color:var(--gray);margin-top:12px;"></p>
-      </div>
+    <!-- MESAS -->
+    <section class="view" data-panel="mesas">
+      <div class="vhead row between"><div><h2>Mesas y QR</h2><p>Imprime el QR de cada mesa: tu cliente cae directo en tu menú.</p></div><button class="btn btn-accent" id="btnNuevaMesa">+ Nueva mesa</button></div>
+      <div class="mgrid" id="mgrid"></div>
+      <div class="card empty" id="mesasEmpty"><div class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9h18M5 9v10M19 9v10M8 9V5h8v4"/></svg></div><h3>Aún no tienes mesas</h3><p>Crea una mesa para generar su código QR.</p><button class="btn btn-accent" data-newmesa>Crear mesa</button></div>
+    </section>
+
+    <!-- CLIENTES -->
+    <section class="view" data-panel="clientes">
+      <div class="vhead"><h2>Clientes</h2><p>Se agregan solos con cada pedido, ordenados por cuánto te han comprado.</p></div>
+      <div id="cliList"></div>
+      <div class="card empty" id="cliEmpty"><div class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.5-4 4-6 7-6s5.5 2 7 6"/></svg></div><h3>Aún no hay clientes</h3><p>Tus clientes aparecerán aquí con su primer pedido.</p></div>
     </section>
   </main>
 </div>
 
-<div id="productModal">
-  <div class="box">
-    <h3 id="pmTitle">Nuevo producto</h3>
-    <div class="field"><label>Nombre</label><input id="pmNombre" type="text" placeholder="Hamburguesa clásica"></div>
-    <div class="field-row">
-      <div class="field"><label>Precio (COP)</label><input id="pmPrecio" type="number" min="0" placeholder="25000"></div>
-      <div class="field"><label>Categoría</label><input id="pmCategoria" type="text" placeholder="Hamburguesas"></div>
-    </div>
-    <div class="field">
-      <label><input type="checkbox" id="pmDisponible" checked style="width:auto;margin-right:6px;">Disponible en el menú</label>
-    </div>
-    <div style="display:flex;gap:10px;margin-top:6px;">
-      <button class="btn btn-outline" id="pmCancel" style="flex:1;justify-content:center;">Cancelar</button>
-      <button class="btn btn-primary" id="pmSave" style="flex:1;justify-content:center;">Guardar</button>
-    </div>
-  </div>
+<nav id="tabbar" aria-label="Navegación móvil">
+  <button data-view="inicio" class="active"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>Inicio</button>
+  <button data-view="productos"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>Productos</button>
+  <button data-view="personalizar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/></svg>Menú</button>
+  <button data-view="ia"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/></svg>IA</button>
+  <button id="tabMore"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Más</button>
+</nav>
+
+<!-- modal PRO / PREMIUM -->
+<div class="modal-bg" id="lockModal" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
+  <div class="modal"><div class="lock-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+    <h3 id="lockTitle">Esta función es PRO</h3><p class="sub" id="lockSub">Actualiza tu plan para desbloquear esta herramienta.</p>
+    <div class="row"><a class="btn btn-accent" id="lockPlans" href="kartta.html#precios">Ver planes</a><button class="btn btn-ghost" id="lockClose">Ahora no</button></div></div>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- modal producto -->
+<div class="modal-bg" id="prodModal" role="dialog" aria-modal="true" aria-labelledby="pmTitle">
+  <div class="modal lg">
+    <h3 id="pmTitle">Nuevo producto</h3><p class="sub">Lo básico para publicarlo en tu menú.</p>
+    <div class="field"><label>Imagen</label><div class="imgbox"><div class="imgprev" id="pmPrev">Sin imagen</div><div class="row"><button type="button" class="btn btn-ghost btn-sm" id="pmPick">Elegir imagen</button><button type="button" class="btn btn-danger btn-sm" id="pmDelImg">Quitar</button></div></div><input type="file" id="pmFile" accept="image/*" hidden></div>
+    <div class="field"><label>Nombre</label><input type="text" id="pmNombre" maxlength="70" placeholder="Hamburguesa clásica"></div>
+    <div class="f2"><div class="field"><label>Precio (COP)</label><input type="number" id="pmPrecio" min="0" placeholder="25000"></div><div class="field"><label>Categoría</label><input type="text" id="pmCat" maxlength="40" placeholder="Hamburguesas" list="catList"><datalist id="catList"></datalist></div></div>
+    <div class="field"><label>Descripción</label><textarea id="pmDesc" maxlength="200" placeholder="Ingredientes, tamaño, lo que lo hace especial…"></textarea></div>
+    <label class="sw">Disponible en el menú<input type="checkbox" id="pmDisp" checked></label>
+    <div style="margin-top:14px" id="pmAdv"></div>
+    <div class="row" style="margin-top:18px"><button class="btn btn-ghost" id="pmCancel" style="flex:1">Cancelar</button><button class="btn btn-accent" id="pmSave" style="flex:1">Guardar</button></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
 
 <script type="module">
-/**
- * Requiere firebase-init.js cargado ANTES de este archivo (mismo dominio),
- * o pega aquí tu propia inicialización si prefieres un solo archivo.
- * Este script asume que window.KARTTA_AUTH y una instancia de Firestore
- * ya existen. Si tu firebase-init.js no expone `db`, ajusta el import
- * de abajo para apuntar a tu propio módulo.
- */
-import { getFirestore, doc, getDoc, setDoc, collection, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy }
+import { getFirestore, doc, getDoc, setDoc, collection, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-const gate = document.getElementById('gate');
-const gateMsg = document.getElementById('gateMsg');
-const app = document.getElementById('app');
+/* ======================================================================
+   ESTRUCTURA DE DATOS (Firestore) — lista para crecer sin tocar el frontend
+   usuarios/{uid}            -> nombre, nombrePanel, negocioId, prefs{theme,accent}, termsAccepted...
+   negocios/{id}             -> nombre, descripcion, telefono, whatsapp, direccion, logo, banner,
+                                plan('trial'|'free'|'kartta'|'pro'|'custom'), aiTokens, rating?,
+                                dominio, menuSettings{...}, menuConfigured, onboardingCompleted
+   negocios/{id}/productos   -> nombre(name), precio(price), descripcion, imagen, categoria,
+                                disponible(available), descuento(%), personalizacion, creado, actualizado
+   negocios/{id}/pedidos|mesas   -> ya existentes
+   dominios/{host}           -> { negocioId }
+   Pendiente de conectar: aiUsage, subscription, reviews (hoy leen campos de negocios/{id} si existen).
+   ====================================================================== */
+const PLAN_RANK = { trial:0, free:0, kartta:1, pro:2, custom:3 };
+const PLAN_NAME = { trial:'Prueba gratis', free:'Free', kartta:'KARTTA', pro:'KARTTA Pro', custom:'Personalizado' };
+const PROD_LIMIT = [20, 60, 200, 1000];
+const ACCENTS = { Rojo:'#FF3145', Azul:'#3B82F6', Verde:'#22C55E', Amarillo:'#EAB308', Morado:'#8B5CF6', Naranja:'#F97316' };
+const MS_DEFAULT = { primary:'#FF3145', secondary:'#0A0A0A', cardStyle:'round', buttonStyle:'solid', size:'m', showImages:true, showDescriptions:true, showPrices:true, tagline:'' };
 
-function showGateError(msg){
-  gateMsg.textContent = msg;
-}
+const $ = (id) => document.getElementById(id);
+let db, uid, negocioId, negocio = {}, perfil = {}, productos = [], ms = { ...MS_DEFAULT }, pvDevice = 'mobile';
 
-// Espera a que firebase-init.js haya corrido (máx. 4s) antes de decidir que no hay Firebase.
-function esperarFirebase(intentos){
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money = (n) => '$' + Number(n || 0).toLocaleString('es-CO');
+const rank = () => PLAN_RANK[negocio.plan || 'trial'] ?? 0;
+const isPro = () => rank() >= 2;
+const isPremium = () => rank() >= 3;
+const prodLimit = () => PROD_LIMIT[Math.min(rank(), 3)];
+
+function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2600); }
+
+/* ---------- imágenes: se comprimen y se guardan en Firestore (sin Storage).
+   Para migrar a Firebase Storage solo hay que reemplazar subirImagen(). ---------- */
+function fileToDataURL(file, maxSide, quality){
   return new Promise((resolve, reject) => {
-    const check = () => {
-      if (window.KARTTA_AUTH && getApps().length) return resolve();
-      if (intentos <= 0) return reject(new Error('sin_firebase'));
-      intentos--;
-      setTimeout(check, 200);
+    if (!file || !file.type.startsWith('image/')) return reject(new Error('no-image'));
+    const img = new Image(); const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); resolve(c.toDataURL('image/jpeg', quality));
     };
-    check();
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('bad-image')); };
+    img.src = url;
   });
 }
-
-let db, negocioId, negocioData;
-
-async function iniciar(){
-  try {
-    await esperarFirebase(20);
-  } catch {
-    showGateError('No se pudo conectar con Firebase. Revisa que firebase-init.js esté cargado y configurado.');
-    return;
-  }
-
-  db = getFirestore(getApps()[0]);
-
-  window.KARTTA_AUTH.onChange(async (user) => {
-    if (!user) {
-      window.location.href = 'kartta.html';
-      return;
-    }
-    try {
-      const perfilSnap = await getDoc(doc(db, 'usuarios', user.uid));
-      if (!perfilSnap.exists()) throw new Error('sin_perfil');
-      negocioId = perfilSnap.data().negocioId;
-
-      const negocioSnap = await getDoc(doc(db, 'negocios', negocioId));
-      negocioData = negocioSnap.exists() ? negocioSnap.data() : {};
-
-      if (!negocioData.onboardingCompleted) {
-        window.location.href = 'onboarding.html';
-        return;
-      }
-
-      const nombreSaludo = perfilSnap.data().nombrePanel || user.displayName || user.email.split('@')[0];
-      document.getElementById('greeting').textContent = `Hola, ${nombreSaludo}`;
-      document.getElementById('bizLine').textContent = negocioData.nombre || 'Tu negocio';
-      document.getElementById('sbBiz').textContent = negocioData.nombre || 'Tu negocio';
-      document.getElementById('statPlan').textContent = negocioData.plan === 'trial' ? '1 mes gratis' : (negocioData.plan || 'Free');
-      document.getElementById('cfgNombre').value = negocioData.nombre || '';
-      if (negocioData.dominio) {
-        document.getElementById('cfgDominio').value = negocioData.dominio;
-        document.getElementById('dominioActual').textContent = `Conectado: ${negocioData.dominio}`;
-      }
-
-      gate.classList.add('hidden');
-      app.classList.add('ready');
-
-      cargarProductos();
-      cargarMesas();
-      cargarPedidos();
-
-      const greetEl = document.getElementById('iaGreeting');
-      if (greetEl) greetEl.innerHTML = `Hola, ${negocioData.nombre || 'de nuevo'} 👋 ¿cómo estás?<br>Pregúntame lo que quieras sobre tu negocio.`;
-    } catch (e) {
-      console.error(e);
-      showGateError('Tu cuenta no tiene un negocio asociado todavía.');
-    }
-  });
+async function subirImagen(file, tipo){
+  const cfg = { producto:[640,.78], logo:[320,.85], banner:[1200,.74] }[tipo] || [640,.78];
+  return fileToDataURL(file, cfg[0], cfg[1]);
 }
 
-// ---------------- Navegación entre vistas ----------------
-document.querySelectorAll('.sb-item[data-view]').forEach(btn => {
-  btn.addEventListener('click', () => irA(btn.dataset.view));
-});
-document.querySelectorAll('[data-goto]').forEach(btn => {
-  btn.addEventListener('click', () => irA(btn.dataset.goto));
-});
+/* ---------- tema y acento ---------- */
+function getPrefs(){ try { return JSON.parse(localStorage.getItem('kartta_prefs') || '{}'); } catch { return {}; } }
+function applyPrefs(p){
+  document.documentElement.setAttribute('data-theme', p.theme === 'light' ? 'light' : 'dark');
+  document.documentElement.style.setProperty('--accent', p.accent || ACCENTS.Rojo);
+  document.querySelectorAll('#themeSeg button').forEach(b => b.classList.toggle('on', b.dataset.v === (p.theme === 'light' ? 'light' : 'dark')));
+  document.querySelectorAll('.acc').forEach(a => a.classList.toggle('on', a.dataset.c === (p.accent || ACCENTS.Rojo)));
+}
+async function savePrefs(patch){
+  const p = { ...getPrefs(), ...patch };
+  try { localStorage.setItem('kartta_prefs', JSON.stringify(p)); } catch {}
+  applyPrefs(p);
+  try { await setDoc(doc(db, 'usuarios', uid), { prefs: p }, { merge: true }); } catch (e) { console.warn(e); }
+}
+$('accents').innerHTML = Object.entries(ACCENTS).map(([n, c]) => `<button class="acc" data-c="${c}" style="background:${c}" aria-label="${n}" title="${n}"></button>`).join('');
+$('accents').addEventListener('click', e => { const b = e.target.closest('.acc'); if (b) savePrefs({ accent: b.dataset.c }); });
+$('themeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) savePrefs({ theme: b.dataset.v }); });
+
+/* ---------- navegación ---------- */
+const VIEWS = ['inicio','productos','menu','personalizar','configuracion','ia','dominio','pedidos','mesas','clientes'];
 function irA(view){
-  document.querySelectorAll('.sb-item[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === view));
-  document.querySelectorAll('section[data-panel]').forEach(s => s.style.display = s.dataset.panel === view ? 'block' : 'none');
-  document.getElementById('sidebar').classList.remove('open');
+  if (!VIEWS.includes(view)) view = 'inicio';
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.dataset.panel === view));
+  document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === view || (view === 'menu' && b.dataset.view === 'personalizar' && b.closest('#tabbar'))));
+  $('sidebar').classList.remove('open'); $('scrim').classList.remove('show');
+  if (location.hash !== '#' + view) history.replaceState(null, '', '#' + view);
+  if (view === 'personalizar') renderPreview();
+  window.scrollTo({ top: 0 });
 }
-document.getElementById('mobileToggle').addEventListener('click', () => {
-  document.getElementById('sidebar').classList.toggle('open');
+document.addEventListener('click', e => {
+  const v = e.target.closest('[data-view]'); if (v) return irA(v.dataset.view);
+  const g = e.target.closest('[data-goto]'); if (g) { e.preventDefault(); return irA(g.dataset.goto); }
+  const l = e.target.closest('[data-lock]'); if (l) return openLock(l.dataset.lock);
+  if (e.target.closest('[data-newprod]')) return openProd();
+  if (e.target.closest('[data-newmesa]')) return nuevaMesa();
 });
+$('menuBtn').onclick = () => { $('sidebar').classList.add('open'); $('scrim').classList.add('show'); };
+$('tabMore').onclick = $('menuBtn').onclick;
+$('scrim').onclick = () => { $('sidebar').classList.remove('open'); $('scrim').classList.remove('show'); };
+window.addEventListener('hashchange', () => { if ($('app').classList.contains('ready')) irA(location.hash.slice(1)); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeLock(); closeProd(); } });
 
-// ---------------- Logout ----------------
-document.getElementById('btnLogout').addEventListener('click', async () => {
-  await window.KARTTA_AUTH.logout();
-  window.location.href = 'kartta.html';
-});
-
-// ---------------- Toast ----------------
-function toast(msg){
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2600);
+/* ---------- modales ---------- */
+function openLock(kind){
+  const prem = kind === 'PREMIUM';
+  $('lockTitle').textContent = prem ? 'Esta función es PREMIUM' : 'Esta función es PRO';
+  $('lockSub').textContent = prem ? 'Desbloquea herramientas avanzadas para personalizar tu negocio.' : 'Actualiza tu plan para desbloquear esta herramienta.';
+  $('lockModal').classList.add('show');
 }
+function closeLock(){ $('lockModal').classList.remove('show'); }
+$('lockClose').onclick = closeLock; $('lockModal').onclick = e => { if (e.target.id === 'lockModal') closeLock(); };
 
-// ---------------- Productos (CRUD real contra Firestore) ----------------
-let editandoId = null;
-
-function cargarProductos(){
-  const ref = query(collection(db, 'negocios', negocioId, 'productos'), orderBy('nombre'));
-  onSnapshot(ref, (snap) => {
-    const tabla = document.getElementById('tablaProductos');
-    const tbody = document.getElementById('tbodyProductos');
-    const vacio = document.getElementById('productosEmpty');
-
-    if (snap.empty) {
-      tabla.style.display = 'none';
-      vacio.style.display = 'block';
-      document.getElementById('statProductos').textContent = '0';
-      return;
-    }
-    tabla.style.display = 'table';
-    vacio.style.display = 'none';
-    document.getElementById('statProductos').textContent = snap.size;
-
-    tbody.innerHTML = '';
-    snap.forEach(docSnap => {
-      const p = docSnap.data();
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td style="font-weight:600;">${escapeHtml(p.nombre || '')}</td>
-        <td>${escapeHtml(p.categoria || '—')}</td>
-        <td>$${Number(p.precio || 0).toLocaleString('es-CO')}</td>
-        <td><span class="badge ${p.disponible ? 'on' : 'off'}">${p.disponible ? 'Disponible' : 'Oculto'}</span></td>
-        <td>
-          <div class="row-actions">
-            <button class="icon-btn" data-edit="${docSnap.id}" title="Editar">✎</button>
-            <button class="icon-btn" data-del="${docSnap.id}" title="Eliminar">✕</button>
-          </div>
-        </td>`;
-      tbody.appendChild(tr);
-    });
-
-    tbody.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => abrirModal(b.dataset.edit, snap)));
-    tbody.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => eliminarProducto(b.dataset.del)));
-  }, (err) => {
-    console.error(err);
-    toast('No pude cargar tus productos.');
+/* ---------- arranque / sesión ---------- */
+function esperarFirebase(n){ return new Promise((ok, no) => { (function c(){ if (window.KARTTA_AUTH && getApps().length) return ok(); if (n-- <= 0) return no(); setTimeout(c, 200); })(); }); }
+async function iniciar(){
+  try { await esperarFirebase(25); } catch { $('gateMsg').textContent = 'No se pudo conectar con Firebase. Revisa que firebase-init.js esté cargado.'; return; }
+  db = getFirestore(getApps()[0]);
+  window.KARTTA_AUTH.onChange(async (user) => {
+    if (!user) { location.href = 'kartta.html'; return; }
+    try {
+      uid = user.uid;
+      const ps = await getDoc(doc(db, 'usuarios', uid));
+      if (!ps.exists()) throw new Error('sin_perfil');
+      perfil = ps.data(); negocioId = perfil.negocioId;
+      const ns = await getDoc(doc(db, 'negocios', negocioId));
+      negocio = ns.exists() ? ns.data() : {};
+      if (!negocio.onboardingCompleted) { location.href = 'onboarding.html'; return; }
+      ms = { ...MS_DEFAULT, ...(negocio.menuSettings || {}) };
+      if (perfil.prefs) { try { localStorage.setItem('kartta_prefs', JSON.stringify(perfil.prefs)); } catch {} applyPrefs(perfil.prefs); } else applyPrefs(getPrefs());
+      $('helloName').textContent = (perfil.nombrePanel || perfil.nombre || user.displayName || user.email.split('@')[0]).split(' ')[0];
+      hydrate(); bindProductos(); bindMesas(); bindPedidos();
+      $('gate').classList.add('hidden'); $('app').classList.add('ready');
+      irA(location.hash.slice(1) || 'inicio');
+    } catch (e) { console.error(e); $('gateMsg').textContent = 'Tu cuenta no tiene un negocio asociado todavía.'; }
   });
 }
+$('btnLogout').onclick = async () => { await window.KARTTA_AUTH.logout(); location.href = 'kartta.html'; };
 
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function menuURL(){
+  if (negocio.dominio) return 'https://' + negocio.dominio;
+  return location.href.replace(/dashboard\.html.*$/, 'menu.html') + '?negocio=' + encodeURIComponent(negocioId);
 }
-
-function abrirModal(id, snap){
-  editandoId = id || null;
-  document.getElementById('pmTitle').textContent = id ? 'Editar producto' : 'Nuevo producto';
-  if (id && snap) {
-    const p = snap.docs.find(d => d.id === id)?.data();
-    document.getElementById('pmNombre').value = p?.nombre || '';
-    document.getElementById('pmPrecio').value = p?.precio || '';
-    document.getElementById('pmCategoria').value = p?.categoria || '';
-    document.getElementById('pmDisponible').checked = p?.disponible !== false;
-  } else {
-    document.getElementById('pmNombre').value = '';
-    document.getElementById('pmPrecio').value = '';
-    document.getElementById('pmCategoria').value = '';
-    document.getElementById('pmDisponible').checked = true;
-  }
-  document.getElementById('productModal').style.display = 'flex';
+function perfilPct(){
+  const f = [negocio.nombre, negocio.descripcion, negocio.telefono, negocio.direccion, negocio.logo, negocio.banner];
+  return Math.round(f.filter(Boolean).length / f.length * 100);
 }
-document.getElementById('btnNuevoProducto').addEventListener('click', () => abrirModal(null, null));
-document.getElementById('pmCancel').addEventListener('click', () => document.getElementById('productModal').style.display = 'none');
+function hydrate(){
+  const nombre = negocio.nombre || 'Tu negocio';
+  $('sbBiz').textContent = nombre;
+  $('sbAvatar').innerHTML = negocio.logo ? `<img src="${negocio.logo}" alt="">` : esc(nombre[0].toUpperCase());
+  $('helloSub').textContent = `${nombre} · este es tu espacio dentro de KARTTA.`;
+  $('statPlan').textContent = PLAN_NAME[negocio.plan || 'trial'] || 'Prueba gratis';
+  $('lkIA').style.display = isPro() ? 'none' : '';
+  const pct = perfilPct(); $('sumPerfil').textContent = pct + '%'; $('sumPerfilBar').style.width = pct + '%';
+  const tk = negocio.aiTokens;
+  $('sumTokens').textContent = isPro() ? (tk == null ? '—' : Number(tk).toLocaleString('es-CO')) : 'Bloqueado';
+  $('sumTokensSub').textContent = isPro() ? (tk == null ? 'Sin conectar' : 'disponibles') : 'Requiere PRO';
+  $('aiTokens').textContent = isPro() ? (tk == null ? '—' : Number(tk).toLocaleString('es-CO')) : 'PRO';
+  $('aiLock').style.display = isPro() ? 'none' : 'flex';
+  const dom = negocio.dominio; $('sumDom').textContent = dom ? 'Conectado' : 'Pendiente';
+  $('domPill').textContent = dom ? 'Conectado' : 'Pendiente'; $('domPill').className = 'pill ' + (dom ? 'ok' : 'pend');
+  if (dom) $('cfgDominio').value = dom;
+  $('urlMenu').textContent = menuURL(); $('urlAdmin').textContent = location.href.split('#')[0];
+  $('homeMenuLink').href = $('menuOpen').href = menuURL();
+  updateMenuState(); fillConfig(); fillEditor(); updateProdSummary();
+}
+function updateMenuState(){
+  const ok = !!negocio.menuConfigured && productos.length > 0;
+  $('sumMenu').textContent = ok ? 'Configurado' : 'Pendiente';
+  $('menuStatePill').textContent = ok ? 'Configurado' : 'Pendiente'; $('menuStatePill').className = 'pill ' + (ok ? 'ok' : 'pend');
+  $('menuStateTxt').textContent = ok ? 'Tu menú está listo y publicado.' : (productos.length ? 'Falta guardar el diseño en “Personalizar”.' : 'Agrega productos y guarda tu diseño para completarlo.');
+}
+async function saveNegocio(patch){ await setDoc(doc(db, 'negocios', negocioId), patch, { merge: true }); Object.assign(negocio, patch); hydrate(); renderPreview(); }
 
-document.getElementById('pmSave').addEventListener('click', async () => {
-  const nombre = document.getElementById('pmNombre').value.trim();
-  const precio = Number(document.getElementById('pmPrecio').value);
-  const categoria = document.getElementById('pmCategoria').value.trim();
-  const disponible = document.getElementById('pmDisponible').checked;
+/* ---------- configuración ---------- */
+function setImg(el, src, round){ el.innerHTML = src ? `<img src="${src}" alt="">` : (el.dataset.empty || 'Sin imagen'); }
+function fillConfig(){
+  $('cfgNombre').value = negocio.nombre || ''; $('cfgDesc').value = negocio.descripcion || '';
+  $('cfgTel').value = negocio.telefono || ''; $('cfgWpp').value = negocio.whatsapp || ''; $('cfgDir').value = negocio.direccion || '';
+  $('logoPrev').dataset.empty = 'Sin logo'; setImg($('logoPrev'), negocio.logo);
+  $('bannerPrev').dataset.empty = 'Sin banner'; setImg($('bannerPrev'), negocio.banner);
+  applyPrefs(getPrefs());
+}
+$('btnSaveCfg').onclick = async () => {
+  const nombre = $('cfgNombre').value.trim(); if (!nombre) return toast('El nombre no puede quedar vacío.');
+  try { await saveNegocio({ nombre, descripcion: $('cfgDesc').value.trim(), telefono: $('cfgTel').value.trim(), whatsapp: $('cfgWpp').value.trim(), direccion: $('cfgDir').value.trim() }); toast('Cambios guardados.'); }
+  catch (e) { console.error(e); toast('No se pudo guardar.'); }
+};
+function wireImage(pickId, fileId, delId, tipo, field){
+  $(pickId).onclick = () => $(fileId).click();
+  $(fileId).onchange = async () => {
+    const f = $(fileId).files[0]; if (!f) return;
+    try { const data = await subirImagen(f, tipo); await saveNegocio({ [field]: data }); toast('Imagen actualizada.'); } catch (e) { console.error(e); toast('No se pudo usar esa imagen.'); }
+    $(fileId).value = '';
+  };
+  $(delId).onclick = async () => { try { await saveNegocio({ [field]: '' }); toast('Imagen eliminada.'); } catch { toast('No se pudo eliminar.'); } };
+}
+wireImage('logoPick', 'logoFile', 'logoDel', 'logo', 'logo');
+wireImage('bannerPick', 'bannerFile', 'bannerDel', 'banner', 'banner');
 
+/* ---------- dominio ---------- */
+$('btnDominio').onclick = async () => {
+  const d = $('cfgDominio').value.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
+  if (!d || !d.includes('.')) return toast('Escribe un dominio válido, ej: mirestaurante.co');
+  try { await setDoc(doc(db, 'dominios', d), { negocioId, creado: new Date().toISOString() }); await saveNegocio({ dominio: d }); toast('Dominio conectado. Recuerda agregarlo también en Vercel.'); }
+  catch (e) { console.error(e); toast('No se pudo conectar el dominio.'); }
+};
+const copy = async (t) => { try { await navigator.clipboard.writeText(t); toast('Enlace copiado.'); } catch { toast('No se pudo copiar.'); } };
+$('copyMenu').onclick = $('menuCopy').onclick = () => copy(menuURL());
+
+/* ---------- productos ---------- */
+let editId = null, pmImage;   // pmImage: undefined = sin cambios, '' = quitar, dataURL = nueva
+function bindProductos(){
+  onSnapshot(query(collection(db, 'negocios', negocioId, 'productos'), orderBy('nombre')), snap => {
+    productos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderProductos(); updateProdSummary(); updateMenuState(); renderPreview();
+  }, err => { console.error(err); toast('No pude cargar tus productos.'); });
+}
+function finalPrice(p){ const d = Number(p.descuento || 0); return d > 0 ? Math.round(p.precio * (1 - d / 100)) : p.precio; }
+function renderProductos(){
+  const g = $('pgrid'); g.innerHTML = '';
+  $('prodEmpty').style.display = productos.length ? 'none' : 'block';
+  productos.forEach(p => {
+    const c = document.createElement('div'); c.className = 'pcard';
+    const d = Number(p.descuento || 0);
+    c.innerHTML = `<div class="pimg">${p.imagen ? `<img src="${p.imagen}" alt="">` : 'Sin imagen'}</div>
+      <div class="pbody"><div class="pcat">${esc(p.categoria || 'Sin categoría')}</div><div class="pname">${esc(p.nombre)}</div>
+      <div class="pdesc">${esc(p.descripcion || '')}</div>
+      <div class="pprice">${money(finalPrice(p))}${d > 0 ? `<s>${money(p.precio)}</s>` : ''}</div>
+      <div class="pact"><label class="sw" style="border:none;padding:0;gap:8px;font-size:12px"><input type="checkbox" data-av="${p.id}" ${p.disponible !== false ? 'checked' : ''} aria-label="Disponible">${p.disponible !== false ? 'Disponible' : 'Oculto'}</label>
+      <button class="btn btn-ghost btn-sm" data-ed="${p.id}">Editar</button><button class="btn btn-danger btn-sm" data-dl="${p.id}">Eliminar</button></div></div>`;
+    g.appendChild(c);
+  });
+  g.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => openProd(b.dataset.ed));
+  g.querySelectorAll('[data-dl]').forEach(b => b.onclick = () => delProd(b.dataset.dl));
+  g.querySelectorAll('[data-av]').forEach(i => i.onchange = async () => { try { await updateDoc(doc(db, 'negocios', negocioId, 'productos', i.dataset.av), { disponible: i.checked, actualizado: serverTimestamp() }); } catch { toast('No se pudo actualizar.'); } });
+  $('catList').innerHTML = [...new Set(productos.map(p => p.categoria).filter(Boolean))].map(c => `<option value="${esc(c)}">`).join('');
+}
+function updateProdSummary(){
+  const lim = prodLimit(); $('sumProd').innerHTML = `${productos.length} <small>/ ${lim}</small>`; $('sumProdBar').style.width = Math.min(100, productos.length / lim * 100) + '%';
+}
+function openProd(id){
+  if (!id && productos.length >= prodLimit()) return openLock('PRO');
+  editId = id || null; pmImage = undefined;
+  const p = id ? productos.find(x => x.id === id) : null;
+  $('pmTitle').textContent = id ? 'Editar producto' : 'Nuevo producto';
+  $('pmNombre').value = p?.nombre || ''; $('pmPrecio').value = p?.precio ?? ''; $('pmCat').value = p?.categoria || ''; $('pmDesc').value = p?.descripcion || '';
+  $('pmDisp').checked = p ? p.disponible !== false : true;
+  $('pmPrev').innerHTML = p?.imagen ? `<img src="${p.imagen}" alt="">` : 'Sin imagen';
+  $('pmAdv').innerHTML = (isPro()
+      ? `<div class="field"><label>Descuento (%)</label><input type="number" id="pmDesc2" min="0" max="90" value="${p?.descuento || 0}"></div>`
+      : `<button type="button" class="lockrow" data-lock="PRO"><span>Agregar descuento</span><span class="badge-lock">🔒 PRO</span></button>`)
+    + (isPremium()
+      ? `<div class="field"><label>Personalización avanzada (extras, opciones)</label><input type="text" id="pmPers" maxlength="120" value="${esc(p?.personalizacion || '')}" placeholder="Ej: Sin cebolla, término de la carne…"></div>`
+      : `<button type="button" class="lockrow" data-lock="PREMIUM"><span>Personalización avanzada</span><span class="badge-lock">🔒 PREMIUM</span></button>`);
+  $('prodModal').classList.add('show'); setTimeout(() => $('pmNombre').focus(), 50);
+}
+function closeProd(){ $('prodModal').classList.remove('show'); }
+$('btnNuevoProducto').onclick = () => openProd();
+$('pmCancel').onclick = closeProd; $('prodModal').onclick = e => { if (e.target.id === 'prodModal') closeProd(); };
+$('pmPick').onclick = () => $('pmFile').click();
+$('pmFile').onchange = async () => {
+  const f = $('pmFile').files[0]; if (!f) return;
+  try { pmImage = await subirImagen(f, 'producto'); $('pmPrev').innerHTML = `<img src="${pmImage}" alt="">`; } catch { toast('No se pudo usar esa imagen.'); }
+  $('pmFile').value = '';
+};
+$('pmDelImg').onclick = () => { pmImage = ''; $('pmPrev').innerHTML = 'Sin imagen'; };
+$('pmSave').onclick = async () => {
+  const nombre = $('pmNombre').value.trim(), precio = Number($('pmPrecio').value);
   if (!nombre) return toast('Ponle un nombre al producto.');
-  if (!precio || precio <= 0) return toast('El precio debe ser mayor a 0.');
-
+  if (!(precio > 0)) return toast('El precio debe ser mayor a 0.');
+  const data = { nombre, precio, categoria: $('pmCat').value.trim(), descripcion: $('pmDesc').value.trim(), disponible: $('pmDisp').checked, actualizado: serverTimestamp() };
+  if (pmImage !== undefined) data.imagen = pmImage;
+  if ($('pmDesc2')) data.descuento = Math.max(0, Math.min(90, Number($('pmDesc2').value) || 0));
+  if ($('pmPers')) data.personalizacion = $('pmPers').value.trim();
+  $('pmSave').disabled = true;
   try {
-    if (editandoId) {
-      await updateDoc(doc(db, 'negocios', negocioId, 'productos', editandoId), { nombre, precio, categoria, disponible });
-      toast('Producto actualizado.');
-    } else {
-      await addDoc(collection(db, 'negocios', negocioId, 'productos'), { nombre, precio, categoria, disponible });
-      toast('Producto creado.');
-    }
-    document.getElementById('productModal').style.display = 'none';
-  } catch (e) {
-    console.error(e);
-    toast('No se pudo guardar. Intenta de nuevo.');
-  }
-});
+    if (editId) await updateDoc(doc(db, 'negocios', negocioId, 'productos', editId), data);
+    else await addDoc(collection(db, 'negocios', negocioId, 'productos'), { ...data, imagen: data.imagen || '', descuento: data.descuento || 0, creado: serverTimestamp() });
+    toast(editId ? 'Producto actualizado.' : 'Producto creado.'); closeProd();
+  } catch (e) { console.error(e); toast('No se pudo guardar (¿imagen muy pesada?).'); }
+  $('pmSave').disabled = false;
+};
+async function delProd(id){ if (!confirm('¿Eliminar este producto?')) return; try { await deleteDoc(doc(db, 'negocios', negocioId, 'productos', id)); toast('Producto eliminado.'); } catch { toast('No se pudo eliminar.'); } }
 
-async function eliminarProducto(id){
-  if (!confirm('¿Eliminar este producto?')) return;
-  try {
-    await deleteDoc(doc(db, 'negocios', negocioId, 'productos', id));
-    toast('Producto eliminado.');
-  } catch (e) {
-    console.error(e);
-    toast('No se pudo eliminar.');
-  }
+/* ---------- editor de menú + preview en tiempo real ---------- */
+function fillEditor(){
+  $('msPrimary').value = ms.primary; $('msSecondary').value = ms.secondary; $('msTagline').value = ms.tagline || '';
+  $('msImgs').checked = ms.showImages; $('msDescs').checked = ms.showDescriptions; $('msPrices').checked = ms.showPrices;
+  document.querySelectorAll('[data-seg]').forEach(s => s.querySelectorAll('button').forEach(b => b.classList.toggle('on', ms[s.dataset.seg] === b.dataset.v)));
+  document.querySelectorAll('#pvDevice button').forEach(b => b.classList.toggle('on', b.dataset.v === pvDevice));
+}
+[['msPrimary','primary','value'],['msSecondary','secondary','value'],['msTagline','tagline','value'],['msImgs','showImages','checked'],['msDescs','showDescriptions','checked'],['msPrices','showPrices','checked']]
+  .forEach(([id, key, prop]) => $(id).addEventListener('input', () => { ms[key] = $(id)[prop]; renderPreview(); }));
+document.querySelectorAll('[data-seg]').forEach(s => s.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; ms[s.dataset.seg] = b.dataset.v; s.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); renderPreview(); }));
+$('pvDevice').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; pvDevice = b.dataset.v; fillEditor(); renderPreview(); });
+$('btnSaveMenu').onclick = async () => { try { await saveNegocio({ menuSettings: { ...ms }, menuConfigured: true }); toast('Diseño guardado. Ya se ve en tu menú.'); } catch (e) { console.error(e); toast('No se pudo guardar.'); } };
+
+function mapsURL(){ return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(negocio.direccion || ''); }
+function renderPreview(){
+  const stage = $('pvStage'); if (!stage || !$('app').classList.contains('ready')) return;
+  const nombre = negocio.nombre || 'Tu negocio';
+  const rad = { round:18, soft:16, square:4 }[ms.cardStyle] ?? 18, fs = { s:.9, m:1, l:1.12 }[ms.size] ?? 1;
+  const cats = new Map(); productos.filter(p => p.disponible !== false).forEach(p => { const c = p.categoria || 'Otros'; if (!cats.has(c)) cats.set(c, []); cats.get(c).push(p); });
+  let body = '';
+  cats.forEach((items, c) => {
+    body += `<div class="cat">${esc(c)}</div>` + items.map(p => {
+      const d = Number(p.descuento || 0);
+      return `<div class="it">${ms.showImages && p.imagen ? `<img src="${p.imagen}" alt="">` : ''}<div style="min-width:0"><div class="t">${esc(p.nombre)}</div>${ms.showDescriptions && p.descripcion ? `<div class="d">${esc(p.descripcion)}</div>` : ''}${ms.showPrices ? `<div class="pr">${money(finalPrice(p))}${d > 0 ? `<s>${money(p.precio)}</s>` : ''}</div>` : ''}</div><div class="add">+</div></div>`;
+    }).join('');
+  });
+  if (!body) body = '<div class="none">Agrega productos para ver tu menú aquí.</div>';
+  const rating = negocio.rating ? `<span>⭐ ${esc(negocio.rating)} · Google</span>` : `<span>⭐ 4.8 · Google <span class="ex">ejemplo</span></span>`;
+  const html = `<div class="mp ${ms.cardStyle === 'soft' ? 'soft' : ''} ${ms.buttonStyle === 'outline' ? 'outline' : ''}" style="--p:${esc(ms.primary)};--s:${esc(ms.secondary)};--rad:${rad}px;--fs:${fs}">
+    <div class="ban" style="${negocio.banner ? `background-image:url(${negocio.banner})` : ''}"></div>
+    <div class="prof"><div class="logo">${negocio.logo ? `<img src="${negocio.logo}" alt="">` : esc(nombre[0].toUpperCase())}</div><div class="nm">${esc(nombre)}</div></div>
+    ${ms.tagline ? `<div class="tag">${esc(ms.tagline)}</div>` : ''}
+    <div class="meta">${rating}${negocio.direccion ? `<a href="${mapsURL()}" target="_blank" rel="noopener">📍 Ver ubicación</a>` : ''}</div>
+    ${body}<div style="height:24px"></div></div>`;
+  stage.innerHTML = pvDevice === 'pc'
+    ? `<div class="pv-pc"><div class="chrome"><i></i><i></i><i></i></div><div class="scr">${html}</div></div>`
+    : `<div class="pv-phone"><div class="scr">${html}</div></div>`;
 }
 
-// ---------------- Configuración ----------------
-document.getElementById('btnGuardarConfig').addEventListener('click', async () => {
-  const nombre = document.getElementById('cfgNombre').value.trim();
-  if (!nombre) return toast('El nombre no puede quedar vacío.');
-  try {
-    await setDoc(doc(db, 'negocios', negocioId), { nombre }, { merge: true });
-    document.getElementById('bizLine').textContent = nombre;
-    document.getElementById('sbBiz').textContent = nombre;
-    toast('Cambios guardados.');
-  } catch (e) {
-    console.error(e);
-    toast('No se pudo guardar.');
+/* ---------- IA ---------- */
+function aiBubble(t, who){ const b = document.createElement('div'); b.className = 'bub ' + who; if (who === 'typing') { b.className = 'bub bot typing'; b.innerHTML = '<i></i><i></i><i></i>'; } else b.textContent = t; $('msgs').appendChild(b); $('msgs').scrollTop = $('msgs').scrollHeight; return b; }
+$('aiText').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('aiForm').requestSubmit(); } });
+$('aiText').addEventListener('input', () => { $('aiText').style.height = 'auto'; $('aiText').style.height = Math.min(120, $('aiText').scrollHeight) + 'px'; });
+$('aiForm').addEventListener('submit', async e => {
+  e.preventDefault(); if (!isPro()) return openLock('PRO');
+  const msg = $('aiText').value.trim(); if (!msg) return;
+  aiBubble(msg, 'me'); $('aiText').value = ''; $('aiText').style.height = 'auto'; $('aiSend').disabled = true;
+  const typing = aiBubble('', 'typing'); let out;
+  if (!window.KARTTA_AI_ADMIN_ENDPOINT) out = 'El asistente aún no está conectado al servidor de IA. Cuando se active, responderá aquí con los datos de tu negocio.';
+  else {
+    try {
+      const token = await getAuth(getApps()[0]).currentUser.getIdToken();
+      const r = await fetch(window.KARTTA_AI_ADMIN_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ negocioId, mensaje: msg }) });
+      if (!r.ok) throw new Error('http'); out = (await r.json()).respuesta || 'No obtuve una respuesta. Intenta de nuevo.';
+    } catch { out = 'No pude conectar con el asistente. Revisa tu conexión e intenta de nuevo.'; }
   }
+  typing.remove(); aiBubble(out, 'bot'); $('aiSend').disabled = false; $('aiText').focus();
 });
 
-document.getElementById('btnGuardarDominio').addEventListener('click', async () => {
-  let dominio = document.getElementById('cfgDominio').value.trim().toLowerCase();
-  dominio = dominio.replace(/^https?:\/\//, '').replace(/\/$/, '');
-  if (!dominio || !dominio.includes('.')) return toast('Escribe un dominio válido, ej: mirestaurante.co');
-  try {
-    await setDoc(doc(db, 'dominios', dominio), { negocioId, creado: new Date().toISOString() });
-    await setDoc(doc(db, 'negocios', negocioId), { dominio }, { merge: true });
-    document.getElementById('dominioActual').textContent = `Conectado: ${dominio} — recuerda agregarlo también en Vercel → Settings → Domains para que resuelva de verdad.`;
-    toast('Dominio conectado.');
-  } catch (e) {
-    console.error(e);
-    toast('No se pudo conectar el dominio.');
-  }
-});
+/* ---------- mesas y QR ---------- */
+const urlMesa = (n) => `${location.href.replace(/dashboard\.html.*$/, 'menu.html')}?negocio=${encodeURIComponent(negocioId)}&mesa=${encodeURIComponent(n)}`;
+function bindMesas(){
+  onSnapshot(query(collection(db, 'negocios', negocioId, 'mesas'), orderBy('numero')), snap => {
+    const g = $('mgrid'); g.innerHTML = ''; $('mesasEmpty').style.display = snap.empty ? 'block' : 'none';
+    snap.forEach(d => {
+      const m = d.data(), c = document.createElement('div'); c.className = 'mcard';
+      c.innerHTML = `<strong style="color:var(--strong)">Mesa ${esc(m.numero)}</strong><div class="qrbox" id="qr-${d.id}"></div><div class="row" style="justify-content:center"><button class="btn btn-ghost btn-sm" data-dq="${d.id}" data-n="${esc(m.numero)}">Descargar</button><button class="btn btn-danger btn-sm" data-dm="${d.id}">Eliminar</button></div>`;
+      g.appendChild(c);
+      new QRCode($('qr-' + d.id), { text: urlMesa(m.numero), width: 138, height: 138, colorDark: '#0A0A0A', colorLight: '#FFFFFF', correctLevel: QRCode.CorrectLevel.M });
+    });
+    g.querySelectorAll('[data-dq]').forEach(b => b.onclick = () => { const box = $('qr-' + b.dataset.dq), cv = box.querySelector('canvas'), im = box.querySelector('img'); const u = cv ? cv.toDataURL('image/png') : im?.src; if (!u) return toast('No se pudo generar el QR.'); const a = document.createElement('a'); a.href = u; a.download = `kartta-mesa-${b.dataset.n}.png`; a.click(); });
+    g.querySelectorAll('[data-dm]').forEach(b => b.onclick = async () => { if (!confirm('¿Eliminar esta mesa? El QR impreso dejará de servir.')) return; try { await deleteDoc(doc(db, 'negocios', negocioId, 'mesas', b.dataset.dm)); toast('Mesa eliminada.'); } catch { toast('No se pudo eliminar.'); } });
+  }, err => { console.error(err); toast('No pude cargar tus mesas.'); });
+}
+async function nuevaMesa(){ const n = prompt('Número o nombre de la mesa (ej: 4, Terraza 2):'); if (!n || !n.trim()) return; try { await addDoc(collection(db, 'negocios', negocioId, 'mesas'), { numero: n.trim() }); toast('Mesa creada.'); } catch { toast('No se pudo crear la mesa.'); } }
+$('btnNuevaMesa').onclick = nuevaMesa;
+
+/* ---------- pedidos + clientes + estadísticas ---------- */
+const ESTADOS = ['nuevo', 'preparando', 'listo', 'entregado'], ELABEL = { nuevo:'Nuevo', preparando:'Preparando', listo:'Listo', entregado:'Entregado' };
+function bindPedidos(){
+  onSnapshot(query(collection(db, 'negocios', negocioId, 'pedidos'), orderBy('creado', 'desc')), snap => {
+    const list = $('pedList'); list.innerHTML = ''; $('pedEmpty').style.display = snap.empty ? 'block' : 'none';
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0); let ventas = 0, nHoy = 0; const cli = new Map();
+    snap.forEach(d => {
+      const p = d.data(), est = p.estado || 'nuevo', sig = ESTADOS[ESTADOS.indexOf(est) + 1], f = p.creado?.toDate?.();
+      if (f && f >= hoy) { nHoy++; ventas += Number(p.total || 0); }
+      const k = (p.clienteTelefono || p.clienteNombre || 'anon').toLowerCase(); if (!cli.has(k)) cli.set(k, { n: p.clienteNombre || 'Cliente', t: p.clienteTelefono || '', c: 0, s: 0 }); const c = cli.get(k); c.c++; c.s += Number(p.total || 0);
+      const el = document.createElement('div'); el.className = 'ped';
+      el.innerHTML = `<div class="top"><div><div class="mesa">Mesa ${esc(p.mesa || '—')}</div><div class="cli">${esc(p.clienteNombre || 'Cliente')}${p.clienteTelefono ? ' · ' + esc(p.clienteTelefono) : ''}</div></div><span class="st ${est}">${ELABEL[est] || est}</span></div>
+        <div class="items">${(p.items || []).map(i => `${i.cantidad}x ${esc(i.nombre)}`).join(' · ') || 'Sin productos'}</div>
+        <div class="bot"><strong style="color:var(--strong)">${money(p.total)} <span class="pill ${p.pagado ? 'ok' : 'pend'}">${p.pagado ? 'Pagado' : 'Sin pagar'}</span></strong><div class="row">${!p.pagado ? `<button class="btn btn-ghost btn-sm" data-pay="${d.id}">Marcar pagado</button>` : ''}${sig ? `<button class="btn btn-accent btn-sm" data-adv="${d.id}" data-n="${sig}">Avanzar a ${ELABEL[sig]}</button>` : ''}</div></div>`;
+      list.appendChild(el);
+    });
+    list.querySelectorAll('[data-adv]').forEach(b => b.onclick = () => updateDoc(doc(db, 'negocios', negocioId, 'pedidos', b.dataset.adv), { estado: b.dataset.n }).catch(() => toast('No se pudo actualizar.')));
+    list.querySelectorAll('[data-pay]').forEach(b => b.onclick = () => updateDoc(doc(db, 'negocios', negocioId, 'pedidos', b.dataset.pay), { pagado: true }).then(() => toast('Marcado como pagado.')).catch(() => toast('No se pudo actualizar.')));
+    $('statVentas').textContent = money(ventas); $('statPedidos').textContent = nHoy; $('statClientes').textContent = cli.size;
+    const cl = $('cliList'); cl.innerHTML = ''; $('cliEmpty').style.display = cli.size ? 'none' : 'block';
+    [...cli.values()].sort((a, b) => b.s - a.s).forEach(c => { const el = document.createElement('div'); el.className = 'ped'; el.innerHTML = `<div class="top"><div><div class="mesa">${esc(c.n)}</div><div class="cli">${esc(c.t) || 'Sin teléfono'}</div></div><span class="st entregado">${c.c} pedido${c.c === 1 ? '' : 's'}</span></div><div class="bot"><strong style="color:var(--strong)">${money(c.s)} en total</strong></div>`; cl.appendChild(el); });
+  }, err => { console.error(err); toast('No pude cargar los pedidos.'); });
+}
 
 iniciar();
-
-// ---------------- Mesas y QR ----------------
-function urlMenuMesa(numero){
-  const base = window.location.href.replace(/dashboard\.html.*$/, 'menu.html');
-  return `${base}?negocio=${encodeURIComponent(negocioId)}&mesa=${encodeURIComponent(numero)}`;
-}
-
-function cargarMesas(){
-  const ref = query(collection(db, 'negocios', negocioId, 'mesas'), orderBy('numero'));
-  onSnapshot(ref, (snap) => {
-    const grid = document.getElementById('mesaGrid');
-    const vacio = document.getElementById('mesasEmpty');
-    grid.innerHTML = '';
-
-    if (snap.empty) { vacio.style.display = 'block'; return; }
-    vacio.style.display = 'none';
-
-    snap.forEach(docSnap => {
-      const m = docSnap.data();
-      const url = urlMenuMesa(m.numero);
-
-      const card = document.createElement('div');
-      card.className = 'mesa-card';
-      card.innerHTML = `
-        <div class="num">Mesa ${escapeHtml(String(m.numero))}</div>
-        <div class="qrbox" id="qr-${docSnap.id}"></div>
-        <div class="actions">
-          <button class="btn btn-outline" data-download="${docSnap.id}" data-num="${escapeHtml(String(m.numero))}">Descargar</button>
-          <button class="btn btn-danger" data-delmesa="${docSnap.id}">Eliminar</button>
-        </div>`;
-      grid.appendChild(card);
-
-      // eslint-disable-next-line no-undef
-      new QRCode(document.getElementById(`qr-${docSnap.id}`), {
-        text: url, width: 150, height: 150,
-        colorDark: '#0A0A0A', colorLight: '#FFFFFF',
-        correctLevel: QRCode.CorrectLevel.M
-      });
-    });
-
-    grid.querySelectorAll('[data-download]').forEach(b => {
-      b.addEventListener('click', () => descargarQR(b.dataset.download, b.dataset.num));
-    });
-    grid.querySelectorAll('[data-delmesa]').forEach(b => {
-      b.addEventListener('click', () => eliminarMesa(b.dataset.delmesa));
-    });
-  }, (err) => { console.error(err); toast('No pude cargar tus mesas.'); });
-}
-
-function descargarQR(id, numero){
-  const box = document.getElementById(`qr-${id}`);
-  const canvas = box.querySelector('canvas');
-  const img = box.querySelector('img');
-  const dataUrl = canvas ? canvas.toDataURL('image/png') : (img ? img.src : null);
-  if (!dataUrl) return toast('No se pudo generar la imagen del QR.');
-
-  const a = document.createElement('a');
-  a.href = dataUrl;
-  a.download = `kartta-mesa-${numero}.png`;
-  a.click();
-}
-
-document.getElementById('btnNuevaMesa').addEventListener('click', async () => {
-  const numero = prompt('Número o nombre de la mesa (ej: 4, Terraza 2):');
-  if (!numero || !numero.trim()) return;
-  try {
-    await addDoc(collection(db, 'negocios', negocioId, 'mesas'), { numero: numero.trim() });
-    toast('Mesa creada.');
-  } catch (e) {
-    console.error(e);
-    toast('No se pudo crear la mesa.');
-  }
-});
-
-async function eliminarMesa(id){
-  if (!confirm('¿Eliminar esta mesa? El QR impreso dejará de servir.')) return;
-  try {
-    await deleteDoc(doc(db, 'negocios', negocioId, 'mesas', id));
-    toast('Mesa eliminada.');
-  } catch (e) {
-    console.error(e);
-    toast('No se pudo eliminar.');
-  }
-}
-
-// ---------------- Pedidos ----------------
-const PED_ESTADOS = ['nuevo', 'preparando', 'listo', 'entregado'];
-const PED_LABEL = { nuevo: 'Nuevo', preparando: 'Preparando', listo: 'Listo', entregado: 'Entregado' };
-
-function cargarPedidos(){
-  const ref = query(collection(db, 'negocios', negocioId, 'pedidos'), orderBy('creado', 'desc'));
-  onSnapshot(ref, (snap) => {
-    const list = document.getElementById('pedidosList');
-    const vacio = document.getElementById('pedidosEmpty');
-    list.innerHTML = '';
-
-    // ---- acumuladores para Inicio y Clientes ----
-    const hoy = new Date(); hoy.setHours(0,0,0,0);
-    let ventasHoy = 0, pedidosHoy = 0;
-    const clientes = new Map(); // telefono||nombre -> {nombre, telefono, pedidos, total}
-
-    if (snap.empty) { vacio.style.display = 'block'; } else { vacio.style.display = 'none'; }
-
-    snap.forEach(docSnap => {
-      const p = docSnap.data();
-      const estado = p.estado || 'nuevo';
-      const idx = PED_ESTADOS.indexOf(estado);
-      const siguiente = PED_ESTADOS[idx + 1];
-      const fecha = p.creado && p.creado.toDate ? p.creado.toDate() : null;
-      const esHoy = fecha && fecha >= hoy;
-      if (esHoy) { pedidosHoy++; ventasHoy += Number(p.total || 0); }
-
-      const key = (p.clienteTelefono || p.clienteNombre || 'anon').toLowerCase();
-      if (!clientes.has(key)) clientes.set(key, { nombre: p.clienteNombre || 'Cliente', telefono: p.clienteTelefono || '', pedidos: 0, total: 0 });
-      const c = clientes.get(key);
-      c.pedidos++; c.total += Number(p.total || 0);
-
-      const items = (p.items || []).map(it => `${it.cantidad}x ${escapeHtml(it.nombre)}`).join(' · ');
-      const pagado = !!p.pagado;
-
-      const card = document.createElement('div');
-      card.className = 'ped-card';
-      card.innerHTML = `
-        <div class="ped-top">
-          <div>
-            <div class="ped-mesa">Mesa ${escapeHtml(String(p.mesa || '—'))}</div>
-            <div class="ped-cliente">${escapeHtml(p.clienteNombre || 'Cliente')}${p.clienteTelefono ? ' · ' + escapeHtml(p.clienteTelefono) : ''}</div>
-          </div>
-          <span class="ped-badge ${estado}">${PED_LABEL[estado] || estado}</span>
-        </div>
-        <div class="ped-items">${items || 'Sin productos'}</div>
-        <div class="ped-bottom">
-          <span class="ped-total">$${Number(p.total || 0).toLocaleString('es-CO')} ${pagado ? '<span class="badge on" style="margin-left:6px;">Pagado</span>' : '<span class="badge off" style="margin-left:6px;">Sin pagar</span>'}</span>
-          <div style="display:flex;gap:8px;">
-            ${!pagado ? `<button class="btn btn-outline" data-pagar="${docSnap.id}" style="font-size:12px;padding:8px 14px;">Marcar pagado</button>` : ''}
-            ${siguiente ? `<button class="btn btn-primary" data-avanzar="${docSnap.id}" data-next="${siguiente}" style="font-size:12px;padding:8px 14px;">Avanzar a ${PED_LABEL[siguiente]}</button>` : ''}
-          </div>
-        </div>`;
-      list.appendChild(card);
-    });
-
-    list.querySelectorAll('[data-avanzar]').forEach(b => {
-      b.addEventListener('click', () => avanzarPedido(b.dataset.avanzar, b.dataset.next));
-    });
-    list.querySelectorAll('[data-pagar]').forEach(b => {
-      b.addEventListener('click', () => marcarPagado(b.dataset.pagar));
-    });
-
-    // ---- actualizar Inicio ----
-    const statPedidosHoy = document.getElementById('statPedidosHoy');
-    if (statPedidosHoy) statPedidosHoy.textContent = pedidosHoy;
-    const statVentasHoy = document.getElementById('statVentasHoy');
-    if (statVentasHoy) statVentasHoy.textContent = '$' + ventasHoy.toLocaleString('es-CO');
-    const statClientes = document.getElementById('statClientes');
-    if (statClientes) statClientes.textContent = clientes.size;
-
-    // ---- actualizar Clientes ----
-    renderClientes(clientes);
-  }, (err) => { console.error(err); toast('No pude cargar los pedidos.'); });
-}
-
-function renderClientes(clientesMap){
-  const cont = document.getElementById('clientesList');
-  const vacio = document.getElementById('clientesEmpty');
-  if (!cont) return;
-  cont.innerHTML = '';
-
-  if (clientesMap.size === 0) { vacio.style.display = 'block'; return; }
-  vacio.style.display = 'none';
-
-  const ordenados = [...clientesMap.values()].sort((a, b) => b.total - a.total);
-  ordenados.forEach(c => {
-    const row = document.createElement('div');
-    row.className = 'ped-card';
-    row.innerHTML = `
-      <div class="ped-top">
-        <div>
-          <div class="ped-mesa">${escapeHtml(c.nombre)}</div>
-          <div class="ped-cliente">${c.telefono ? escapeHtml(c.telefono) : 'Sin teléfono'}</div>
-        </div>
-        <span class="ped-badge entregado">${c.pedidos} pedido${c.pedidos === 1 ? '' : 's'}</span>
-      </div>
-      <div class="ped-bottom"><span class="ped-total">$${c.total.toLocaleString('es-CO')} en total</span></div>`;
-    cont.appendChild(row);
-  });
-}
-
-async function marcarPagado(id){
-  try {
-    await updateDoc(doc(db, 'negocios', negocioId, 'pedidos', id), { pagado: true });
-    toast('Marcado como pagado.');
-  } catch (e) {
-    console.error(e);
-    toast('No se pudo actualizar.');
-  }
-}
-
-async function avanzarPedido(id, siguienteEstado){
-  try {
-    await updateDoc(doc(db, 'negocios', negocioId, 'pedidos', id), { estado: siguienteEstado });
-  } catch (e) {
-    console.error(e);
-    toast('No se pudo actualizar el pedido.');
-  }
-}
-
-// ---------------- Asistente IA (vista del dashboard) ----------------
-const iaForm = document.getElementById('iaForm');
-const iaBody = document.getElementById('iaBody');
-const iaText = document.getElementById('iaText');
-
-function iaBubble(html, who){
-  const b = document.createElement('div');
-  b.className = 'kbubble ' + who;
-  b.innerHTML = html;
-  iaBody.appendChild(b);
-  iaBody.scrollTop = iaBody.scrollHeight;
-  return b;
-}
-
-function respuestaAdminLocal(msg){
-  const m = msg.toLowerCase();
-  const numProductos = document.getElementById('statProductos').textContent;
-  const tipo = (negocioData && negocioData.tipoNegocio) || 'negocio';
-  const oferta = (negocioData && negocioData.oferta) || '';
-  if (m.includes('venta')) return 'Modo demo: aún no tengo el backend de IA conectado para calcular ventas reales. Cuando despliegues la Cloud Function `aiChatAdmin`, te responderé con tus cifras reales de Firestore.';
-  if (m.includes('producto') || m.includes('cuant')) return `Tienes ${numProductos === '—' ? '0' : numProductos} producto(s) cargados en tu menú ahora mismo.`;
-  if (m.includes('precio') || m.includes('sube') || m.includes('baja') || m.includes('cambia')) return 'Modo demo: puedo cambiar precios cuando conectes `aiChatAdmin` (ya te dejé esa función lista) — ahí sí valido el producto, tu rol y dejo el registro en el historial antes de aplicar el cambio.';
-  if (m.includes('publica') || m.includes('cliente') || m.includes('marketing') || m.includes('promocion')) {
-    return `Como ${tipo.toLowerCase()}${oferta ? ' que ofrece ' + oferta.toLowerCase() : ''}, podrías mostrar tu QR en redes, avisar cuando tengas algo nuevo en el menú, e invitar a tus primeros clientes a dejar una reseña — eso es justo lo que activa tu mes gratis. Cuando conecte el backend de IA, te doy ideas más afinadas con tus ventas reales.`;
-  }
-  return `Así se verá tu asistente una vez inicies sesión. Sé que tu negocio es "${negocioData?.nombre || ''}" (${tipo}) — en modo demo respondo cosas básicas; cuando conectes el backend de IA, voy a poder leer tus ventas reales y hacer cambios validados por ti.`;
-}
-
-async function preguntarIA(msg){
-  if (!msg) return;
-  iaBubble(msg.replace(/</g, '&lt;'), 'user');
-  iaText.value = '';
-  const typing = iaBubble('<i></i><i></i><i></i>', 'bot typing');
-
-  let respuesta;
-  if (window.KARTTA_AI_ADMIN_ENDPOINT) {
-    try {
-      const user = (await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js")).getAuth().currentUser;
-      const token = user ? await user.getIdToken() : null;
-      const r = await fetch(window.KARTTA_AI_ADMIN_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
-        body: JSON.stringify({ negocioId, mensaje: msg })
-      });
-      const d = await r.json();
-      respuesta = d.respuesta || respuestaAdminLocal(msg);
-    } catch {
-      respuesta = respuestaAdminLocal(msg);
-    }
-  } else {
-    await new Promise(res => setTimeout(res, 550));
-    respuesta = respuestaAdminLocal(msg);
-  }
-
-  typing.remove();
-  iaBubble(respuesta, 'bot');
-}
-
-if (iaForm) {
-  iaForm.addEventListener('submit', (e) => { e.preventDefault(); preguntarIA(iaText.value.trim()); });
-  document.querySelectorAll('.kchip').forEach(chip => {
-    chip.addEventListener('click', () => preguntarIA(chip.dataset.q || chip.textContent.trim()));
-  });
-}
 </script>
 </body>
 </html>
