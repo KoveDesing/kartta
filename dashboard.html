@@ -565,7 +565,7 @@ async function iniciar(){
     } catch (e) { console.error(e); $('gateMsg').textContent = 'Tu cuenta no tiene un negocio asociado todavía.'; }
   });
 }
-$('btnLogout').onclick = async () => { await window.KARTTA_AUTH.logout(); location.href = 'karttaweb.vercel.app'; };
+$('btnLogout').onclick = async () => { await window.KARTTA_AUTH.logout(); location.href = 'kartta.html'; };
 
 function menuURL(){
   if (negocio.dominio) return 'https://' + negocio.dominio;
