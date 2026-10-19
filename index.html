@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KARTTA — Tu restaurante. Ahora tiene sistema.</title>
-<link rel="icon" type="image/png" href="/favicon%20(2).png">
-<link rel="icon" href="/favicon%20(2).ico" sizes="any">
 <meta name="description" content="KARTTA conecta menú digital, QR, pedidos, cocina, POS, pagos, clientes, inventario, analytics e inteligencia artificial en un solo sistema para restaurantes, cafeterías, bares, pizzerías y food trucks.">
 <link rel="canonical" href="https://kartta.co/">
 <meta property="og:type" content="website">
@@ -497,6 +495,32 @@ body.auth-loading #heroAnon,body.auth-loading #heroLoggedIn,body.auth-loading #n
 .terms-row input{margin-top:2px;accent-color:var(--red);width:15px;height:15px;flex-shrink:0;}
 .terms-row a{color:var(--red);font-weight:600;text-decoration:underline;}
 #authSubmit:disabled{opacity:.45;cursor:not-allowed;}
+
+/* ---- IA y Soluciones en oscuro (carbón, estilo ChatGPT para KARTTA) ---- */
+#asistente,#soluciones{background:#0F0F0F;color:#ECECEC;}
+#asistente .section-head h2,#soluciones .section-head h2{color:#fff;}
+#asistente .section-head p,#soluciones .section-head p{color:#A0A0A0;}
+#asistente .eyebrow,#soluciones .eyebrow{color:#A0A0A0;}
+#asistente .kchat{background:#1E1E1E;border:1px solid #2E2E2E;border-radius:20px;box-shadow:0 20px 50px -24px rgba(0,0,0,.7);}
+#asistente .kchat-head{background:#1E1E1E;border-bottom:1px solid #2E2E2E;color:#ECECEC;}
+#asistente .kchat-status{color:#8A8A8A;}
+#asistente .kchat-title span{color:#ECECEC!important;}
+#asistente .kchat-body{background:#1E1E1E;}
+#asistente .kbubble.bot{background:#2A2A2A;color:#ECECEC;box-shadow:none;}
+#asistente .kbubble.user{background:#3A3A3A;color:#fff;box-shadow:none;}
+#asistente .kbubble.typing i{background:#8A8A8A;}
+#asistente .kchat-chips{background:#1E1E1E;}
+#asistente .kchip{background:#2A2A2A;color:#C8C8C8;border:1px solid #363636;box-shadow:none;}
+#asistente .kchip:hover{background:#363636;color:#fff;}
+#asistente .kchat-input{background:#1E1E1E;}
+#asistente .kchat-input input{background:#2A2A2A;color:#fff;border:1px solid #363636;box-shadow:none;}
+#asistente .kchat-input input::placeholder{color:#8A8A8A;}
+#asistente .kchat-input input:focus{outline:none;border-color:#5A5A5A;}
+#asistente .kchat-input button{background:#fff;color:#0F0F0F;box-shadow:none;}
+#asistente .kchat-input button:hover{background:#E4E4E4;}
+#asistente .kchat-input button:disabled{background:#3A3A3A;color:#777;}
+#soluciones .sol-pill{background:#1E1E1E;border:1px solid #2E2E2E;color:#ECECEC;padding:14px 26px;}
+#soluciones .sol-pill:hover{background:#2E2E2E;border-color:#444;color:#fff;}
 </style>
 <script type="module" src="firebase-init.js"></script>
 <link rel="icon" type="image/png" href="/favicon.png">
@@ -607,30 +631,6 @@ body.auth-loading #heroAnon,body.auth-loading #heroLoggedIn,body.auth-loading #n
   </div>
 </section>
 
-<section class="on-black">
-  <div class="wrap">
-    <div class="section-head">
-      <h2>Una orden. Todo conectado.</h2>
-      <p class="muted">Cada paso de una venta alimenta automáticamente el siguiente.</p>
-    </div>
-    <div class="flow-track" id="flowTrack">
-      <div class="flow-node"><div class="circ">QR</div><div class="lbl">QR</div></div>
-      <div class="flow-sep"></div>
-      <div class="flow-node"><div class="circ">M</div><div class="lbl">Menú</div></div>
-      <div class="flow-sep"></div>
-      <div class="flow-node"><div class="circ">P</div><div class="lbl">Pedido</div></div>
-      <div class="flow-sep"></div>
-      <div class="flow-node"><div class="circ">$</div><div class="lbl">Pago</div></div>
-      <div class="flow-sep"></div>
-      <div class="flow-node"><div class="circ">C</div><div class="lbl">Cocina</div></div>
-      <div class="flow-sep"></div>
-      <div class="flow-node"><div class="circ">V</div><div class="lbl">Venta</div></div>
-      <div class="flow-sep"></div>
-      <div class="flow-node"><div class="circ">A</div><div class="lbl">Analytics</div></div>
-    </div>
-  </div>
-</section>
-
 <section id="como-funciona">
   <div class="wrap">
     <div class="section-head center">
@@ -695,27 +695,6 @@ body.auth-loading #heroAnon,body.auth-loading #heroLoggedIn,body.auth-loading #n
       <button class="c3d-arrow" id="c3dPrev" aria-label="Anterior">←</button>
       <div class="c3d-progress"><b id="c3dNum">01</b> / 10 — <span id="c3dLabel">Escanea el QR</span></div>
       <button class="c3d-arrow" id="c3dNext" aria-label="Siguiente">→</button>
-    </div>
-  </div>
-</section>
-
-<section class="on-black">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">PRODUCT EXPLORER</span>
-      <h2>Todo lo que necesitas.<br>En un solo <span class="hl">sistema</span>.</h2>
-      <p class="muted">Haz click en un módulo y mira cómo cambia el panel.</p>
-    </div>
-    <div class="explorer">
-      <div class="explorer-col" id="explCol1"></div>
-      <div class="explorer-panel">
-        <div class="explorer-topbar"><span></span><span></span><span></span></div>
-        <div class="explorer-body">
-          <div class="explorer-side" id="explSide"></div>
-          <div class="explorer-content" id="explContent"></div>
-        </div>
-      </div>
-      <div class="explorer-col" id="explCol2"></div>
     </div>
   </div>
 </section>
@@ -913,18 +892,6 @@ body.auth-loading #heroAnon,body.auth-loading #heroLoggedIn,body.auth-loading #n
       <span id="faqToggleLabel">Ver más preguntas</span>
       <svg id="faqToggleIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" style="transition:transform .25s ease;"><path d="M6 9l6 6 6-6"/></svg>
     </button>
-  </div>
-</section>
-
-<section>
-  <div class="wrap">
-    <div class="final-cta">
-      <h2>Tu restaurante no <span class="mrd">necesita</span> otra <span class="mrd">herramienta</span>.<br>Necesita un <span class="mrd">sistema</span>.</h2>
-      <div class="hero-ctas" style="justify-content:center;">
-        <a data-auth="signup" href="#" class="btn btn-primary btn-lg">Crear mi KARTTA</a>
-        <a href="#como-funciona" class="btn btn-outline btn-lg">Ver cómo funciona</a>
-      </div>
-    </div>
   </div>
 </section>
 
@@ -1146,18 +1113,6 @@ document.addEventListener('DOMContentLoaded', function(){
     els.forEach(function(e){ io.observe(e); });
   }
 
-  // flow track staggered
-  var flowNodes = document.querySelectorAll('.flow-node');
-  var flowIo = new IntersectionObserver(function(entries){
-    entries.forEach(function(en){
-      if(en.isIntersecting){
-        var idx = Array.prototype.indexOf.call(flowNodes, en.target);
-        setTimeout(function(){ en.target.classList.add('in'); }, reduce?0:idx*120);
-      }
-    });
-  }, {threshold:0.6});
-  flowNodes.forEach(function(n){ flowIo.observe(n); });
-
   // IA chat bubbles reveal in order
   var bubbles = document.querySelectorAll('.bubble');
   var chatIo = new IntersectionObserver(function(entries){
@@ -1258,42 +1213,6 @@ document.addEventListener('DOMContentLoaded', function(){
   restartAutoplay();
   c3dEl.addEventListener('mouseenter', function(){ clearInterval(c3dTimer); });
   c3dEl.addEventListener('mouseleave', restartAutoplay);
-
-  // product explorer
-  var modules = [
-    {t:'Menú', tag:'MENÚ DIGITAL', d:'Tu carta completa, con categorías, precios y fotos.', rows:[['Hamburguesa KARTTA','$25.000'],['Limonada natural','$8.000'],['Doble tocineta','$29.000']]},
-    {t:'QR', tag:'QR', d:'Un código por mesa, listo para imprimir.', rows:[['Mesa 01','Activo'],['Mesa 02','Activo'],['Mesa 03','Activo']]},
-    {t:'Pedidos', tag:'PEDIDOS', d:'Pedidos en tiempo real, organizados por estado.', rows:[['#1048 · Mesa 4','Preparando'],['#1049 · Mesa 2','Nuevo'],['#1047 · Mesa 1','Listo']]},
-    {t:'Mesas', tag:'MESAS', d:'Qué mesa está libre, ocupada o pagando.', rows:[['Mesa 01','Libre'],['Mesa 02','Ocupada'],['Mesa 04','Pagando']]},
-    {t:'POS', tag:'POS', d:'Cobra sin salir del sistema.', rows:[['Pedido #1048','$33.000'],['Método','Transferencia'],['Estado','Pagado']]},
-    {t:'Pagos', tag:'PAGOS', d:'En línea, en efectivo o por transferencia.', rows:[['Hoy','$1.284.000'],['Transferencias','62%'],['Efectivo','38%']]},
-    {t:'Cocina', tag:'COCINA', d:'Pantalla clara para preparar sin confusiones.', rows:[['#1048','Preparando'],['#1049','Nuevo'],['#1050','Nuevo']]},
-    {t:'Clientes', tag:'CLIENTES', d:'Quién compra, qué pide y cuándo vuelve.', rows:[['Clientes activos','412'],['Nuevos este mes','38'],['Recurrentes','61%']]},
-    {t:'Inventario', tag:'INVENTARIO', d:'Se descuenta solo con cada venta.', rows:[['Carne','44 kg'],['Pan','59 u'],['Queso','8 u · bajo']]},
-    {t:'Analytics', tag:'ANALYTICS', d:'Qué vendes más y cuándo.', rows:[['Ventas hoy','$1.284.000'],['Pedidos','124'],['Ticket prom.','$22.158']]},
-    {t:'WhatsApp', tag:'WHATSAPP', d:'Confirma pedidos sin salir del sistema.', rows:[['Mensajes hoy','86'],['Confirmados','79'],['Pendientes','7']]},
-    {t:'Chatbot', tag:'CHATBOT', d:'Responde preguntas frecuentes solo.', rows:[['Consultas hoy','54'],['Resueltas','49'],['Escaladas','5']]},
-    {t:'Automatizaciones', tag:'AUTOMATIZACIONES', d:'Repite las tareas de siempre.', rows:[['Activas','6'],['Ejecutadas hoy','132']]},
-    {t:'IA', tag:'IA', d:'Pide cambios o revisa ventas en lenguaje natural.', rows:[['Consultas hoy','21'],['Cambios aplicados','5']]}
-  ];
-  var col1 = document.getElementById('explCol1'), col2 = document.getElementById('explCol2');
-  var side = document.getElementById('explSide'), content = document.getElementById('explContent');
-  modules.forEach(function(m, i){
-    var b = document.createElement('button');
-    b.className = 'mod-chip' + (i===0?' active':'');
-    b.textContent = m.t;
-    b.addEventListener('click', function(){ setModule(i); });
-    (i % 2 === 0 ? col1 : col2).appendChild(b);
-  });
-  var sideNames = ['Inicio','Pedidos','Menú','Mesas','Cocina','Clientes','Inventario','Analytics'];
-  side.innerHTML = sideNames.map(function(s,i){ return '<div class="si'+(i===0?' on':'')+'">'+s+'</div>'; }).join('');
-  function setModule(i){
-    document.querySelectorAll('.mod-chip').forEach(function(el,idx){ el.classList.toggle('active', idx===i); });
-    var m = modules[i];
-    var rows = m.rows.map(function(r){ return '<div class="ex-row"><span>'+r[0]+'</span><span class="ex-badge">'+r[1]+'</span></div>'; }).join('');
-    content.innerHTML = '<span class="tag">'+m.tag+'</span><h4>'+m.t+'</h4><p>'+m.d+'</p>'+rows;
-  }
-  setModule(0);
 
   // kitchen status live cycle (only while its carousel card is centered)
   var kdsStates = ['Pendiente','Preparando','Listo'];
