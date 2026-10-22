@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -126,7 +125,7 @@ img{max-width:100%;display:block;}
 
   <div class="mempty" id="mempty" style="display:none;">Este negocio todavía no ha cargado su menú.</div>
 
-  <div class="mfooter">Menú digital hecho con <a href="kartta.html">KARTTA</a></div>
+  <div class="mfooter">Menú digital hecho con <a href="/">KARTTA</a></div>
 </div>
 
 <div class="cart-bar" id="cartBar">
@@ -166,111 +165,90 @@ img{max-width:100%;display:block;}
 </div>
 
 <script type="module">
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { sb, imageUrl } from "/supabase-init.js";
 
 /**
  * Esta página es PÚBLICA (nadie inicia sesión para ver un menú).
- * Por eso inicializa su propia conexión a Firebase leyendo el
- * MISMO objeto FIREBASE_CONFIG que ya pusiste en firebase-init.js.
- * Si prefieres no repetirlo, mueve FIREBASE_CONFIG a un tercer
- * archivo (ej. firebase-config.js) e impórtalo desde los dos.
+ * Lee todo mediante la función segura get_public_menu: solo devuelve restaurantes
+ * publicados y únicamente datos aptos para el público. Los pedidos se envían con
+ * place_order: el PRECIO lo calcula el servidor, no el navegador.
  */
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyC7EwDbfHNPq5sjxDbSDWEkM0VMY6uQ4ls",
-  authDomain: "kartta-ba6f2.firebaseapp.com",
-  projectId: "kartta-ba6f2",
-  storageBucket: "kartta-ba6f2.firebasestorage.app",
-  messagingSenderId: "1031500564852",
-  appId: "1:1031500564852:web:347f70f7a8a116610f8421",
-};
-
-const app = getApps().length ? getApps()[0] : initializeApp(FIREBASE_CONFIG);
-const db = getFirestore(app);
-
 const params = new URLSearchParams(window.location.search);
-let negocioId = params.get('negocio');
-let MS = {};
-const precioFinal = (p) => { const d = Number(p.descuento || 0); return d > 0 ? Math.round(p.precio * (1 - d / 100)) : p.precio; };
 const mesa = params.get('mesa');
+let slug = (params.get('r') || '').trim().toLowerCase();
+let MS = {};
+let sessionId = (() => { try { let s = sessionStorage.getItem('kartta_sid'); if (!s) { s = crypto.randomUUID(); sessionStorage.setItem('kartta_sid', s); } return s; } catch { return null; } })();
+const precioFinal = (p) => { const d = Number(p.discount_percent || 0); return d > 0 ? Math.round(p.price * (1 - d / 100)) : Number(p.price); };
 
 function mostrarError(msg){
   document.getElementById('loading').style.display = 'none';
   document.getElementById('errorState').style.display = 'flex';
   if (msg) document.getElementById('errorMsg').textContent = msg;
 }
+function moneyCO(n){ return '$' + Number(n || 0).toLocaleString('es-CO'); }
+function escapeHtml(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const cssColor = (v, fb) => (/^#[0-9a-fA-F]{3,8}$/.test(String(v || '')) ? v : fb);
 
-function moneyCO(n){
-  return '$' + Number(n || 0).toLocaleString('es-CO');
-}
-
-async function resolverNegocioIdPorDominio(){
+async function resolverSlugPorDominio(){
   const host = window.location.hostname;
-  // localhost / vercel.app / github.io: no tiene sentido buscar dominio propio
   if (host === 'localhost' || host.endsWith('.vercel.app') || host.endsWith('.github.io')) return null;
-  try {
-    const snap = await getDoc(doc(db, 'dominios', host));
-    return snap.exists() ? snap.data().negocioId : null;
-  } catch { return null; }
+  const { data } = await sb.rpc('resolve_hostname', { p_host: host });
+  return data || null;
 }
 
 async function cargarMenu(){
-  if (!negocioId) {
-    negocioId = await resolverNegocioIdPorDominio();
-  }
-  if (!negocioId) {
-    mostrarError('Este enlace no incluye el negocio. Pídele al restaurante que te comparta el QR correcto.');
-    return;
-  }
+  if (!slug) slug = await resolverSlugPorDominio() || '';
+  if (!slug) { mostrarError('Este enlace no incluye el negocio. Pídele al restaurante que te comparta el QR correcto.'); return; }
 
-  let negocio;
+  let menu;
   try {
-    const negocioSnap = await getDoc(doc(db, 'negocios', negocioId));
-    if (!negocioSnap.exists()) { mostrarError(); return; }
-    negocio = negocioSnap.data();
+    const { data, error } = await sb.rpc('get_public_menu', { p_slug: slug });
+    if (error) throw error;
+    menu = data;
   } catch (e) {
     console.error(e);
     mostrarError('No pudimos conectar con el servidor. Intenta de nuevo en un momento.');
     return;
   }
+  if (!menu) { mostrarError(); return; }
 
-  document.getElementById('bizName').textContent = negocio.nombre || 'Menú';
-  MS = negocio.menuSettings || {};
-  if (MS.primary) document.documentElement.style.setProperty('--red', MS.primary);
-  if (MS.secondary) document.documentElement.style.setProperty('--black', MS.secondary);
+  const negocio = menu.restaurant;
+  const logo = imageUrl(negocio.logo_path), banner = imageUrl(negocio.cover_path);
+  document.getElementById('bizName').textContent = negocio.name || 'Menú';
+  MS = menu.design || {};
+  const pri = cssColor(MS.primary, null), sec = cssColor(MS.secondary, null);
+  if (pri) document.documentElement.style.setProperty('--red', pri);
+  if (sec) document.documentElement.style.setProperty('--black', sec);
   const hd = document.querySelector('.mheader');
-  if (negocio.banner) { hd.style.backgroundImage = 'linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.55)),url(' + negocio.banner + ')'; hd.style.backgroundSize = 'cover'; hd.style.backgroundPosition = 'center'; }
-  if (negocio.logo) { const lg = document.createElement('img'); lg.src = negocio.logo; lg.alt = ''; lg.style.cssText = 'width:44px;height:44px;border-radius:50%;object-fit:cover;margin-right:12px;flex-shrink:0;'; const left = document.getElementById('bizName').parentElement; left.style.display = 'flex'; left.style.alignItems = 'center'; const txt = document.createElement('div'); while (left.firstChild) txt.appendChild(left.firstChild); left.appendChild(lg); left.appendChild(txt); }
+  if (banner) { hd.style.backgroundImage = 'linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.55)),url(' + JSON.stringify(banner) + ')'; hd.style.backgroundSize = 'cover'; hd.style.backgroundPosition = 'center'; }
+  if (logo) { const lg = document.createElement('img'); lg.src = logo; lg.alt = ''; lg.style.cssText = 'width:44px;height:44px;border-radius:50%;object-fit:cover;margin-right:12px;flex-shrink:0;'; const left = document.getElementById('bizName').parentElement; left.style.display = 'flex'; left.style.alignItems = 'center'; const txt = document.createElement('div'); while (left.firstChild) txt.appendChild(left.firstChild); left.appendChild(lg); left.appendChild(txt); }
   const tagEl = document.querySelector('.mheader .tag');
   if (tagEl) {
-    if (MS.tagline) tagEl.textContent = MS.tagline;
-    const extra = [];
-    if (negocio.rating) extra.push('⭐ ' + String(negocio.rating).replace(/[<>&]/g, '') + ' · Google');
-    if (negocio.direccion) extra.push('<a href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(negocio.direccion) + '" target="_blank" rel="noopener" style="color:#fff;font-weight:700;text-decoration:underline">📍 Ver ubicación</a>');
-    if (extra.length) { const d = document.createElement('div'); d.style.cssText = 'margin-top:6px;font-size:11.5px;color:#D8D8D8;display:flex;gap:12px;flex-wrap:wrap'; d.innerHTML = extra.join(''); tagEl.after(d); }
+    if (MS.tagline) tagEl.textContent = String(MS.tagline).slice(0, 140);
+    if (negocio.address) {
+      const d = document.createElement('div');
+      d.style.cssText = 'margin-top:6px;font-size:11.5px;color:#D8D8D8;display:flex;gap:12px;flex-wrap:wrap';
+      const a = document.createElement('a');
+      a.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(negocio.address);
+      a.target = '_blank'; a.rel = 'noopener'; a.style.cssText = 'color:#fff;font-weight:700;text-decoration:underline'; a.textContent = '📍 Ver ubicación';
+      d.appendChild(a); tagEl.after(d);
+    }
   }
-  document.title = (negocio.nombre || 'Menú') + ' — KARTTA';
-  if (mesa) {
-    const tag = document.getElementById('mesaTag');
-    tag.style.display = 'inline-block';
-    tag.textContent = 'Mesa ' + mesa;
-  }
+  document.title = (negocio.name || 'Menú') + ' — KARTTA';
+  if (mesa) { const tag = document.getElementById('mesaTag'); tag.style.display = 'inline-block'; tag.textContent = 'Mesa ' + mesa; }
 
-  const prodSnap = await getDocs(collection(db, 'negocios', negocioId, 'productos'));
   document.getElementById('loading').style.display = 'none';
   document.getElementById('menuShell').style.display = 'block';
+  sb.rpc('track_event', { p_slug: slug, p_type: mesa ? 'qr_scan' : 'menu_view', p_product: null, p_session: sessionId }).then(() => {}, () => {});
 
-  if (prodSnap.empty) {
-    document.getElementById('mempty').style.display = 'block';
-    return;
-  }
+  const productos = menu.products || [];
+  if (!productos.length) { document.getElementById('mempty').style.display = 'block'; return; }
 
-  // Agrupar por categoría, en el orden en que van apareciendo.
+  const catName = new Map((menu.categories || []).map(c => [c.id, c.name]));
   const categorias = new Map();
-  prodSnap.forEach(d => {
-    const p = d.data();
-    p.id = d.id;
-    const cat = (p.categoria || 'Otros').trim() || 'Otros';
+  (menu.categories || []).forEach(c => categorias.set(c.name, []));
+  productos.forEach(p => {
+    const cat = (catName.get(p.category_id) || 'Otros').trim() || 'Otros';
     if (!categorias.has(cat)) categorias.set(cat, []);
     categorias.get(cat).push(p);
   });
@@ -278,49 +256,37 @@ async function cargarMenu(){
   const mcats = document.getElementById('mcats');
   const mlist = document.getElementById('mlist');
   let primero = true;
-
-  categorias.forEach((productos, cat) => {
-    const catId = 'cat-' + cat.replace(/\s+/g, '-').toLowerCase();
-
+  categorias.forEach((items, cat) => {
+    if (!items.length) return;
+    const catId = 'cat-' + cat.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase();
     const btn = document.createElement('button');
     btn.className = 'mcat-btn' + (primero ? ' active' : '');
     btn.textContent = cat;
-    btn.addEventListener('click', () => {
-      document.getElementById(catId).scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
+    btn.addEventListener('click', () => { document.getElementById(catId).scrollIntoView({ behavior: 'smooth', block: 'start' }); });
     mcats.appendChild(btn);
-
     const title = document.createElement('div');
-    title.className = 'mcat-title';
-    title.id = catId;
-    title.textContent = cat;
+    title.className = 'mcat-title'; title.id = catId; title.textContent = cat;
     mlist.appendChild(title);
-
-    // Disponibles primero, agotados al final de su categoría.
-    productos.sort((a, b) => (b.disponible !== false) - (a.disponible !== false));
-
-    productos.forEach(p => {
-      const disponible = p.disponible !== false;
+    items.sort((a, b) => (b.is_available !== false) - (a.is_available !== false));
+    items.forEach(p => {
+      const disponible = p.is_available !== false;
       const item = document.createElement('div');
       item.className = 'mitem' + (disponible ? '' : ' off');
-      const dsc = Number(p.descuento || 0);
+      const dsc = Number(p.discount_percent || 0);
+      const img = imageUrl(p.image_path);
       item.innerHTML = `
-        ${MS.showImages !== false && p.imagen ? `<img src="${p.imagen}" alt="" style="width:58px;height:58px;border-radius:12px;object-fit:cover;flex-shrink:0">` : ''}
-        <div style="flex:1;min-width:0"><div class="name">${escapeHtml(p.nombre || '')}</div>${MS.showDescriptions !== false && p.descripcion ? `<div class="cat" style="font-size:12px">${escapeHtml(p.descripcion)}</div>` : ''}</div>
+        ${MS.showImages !== false && img ? `<img src="${escapeHtml(img)}" alt="" loading="lazy" style="width:58px;height:58px;border-radius:12px;object-fit:cover;flex-shrink:0">` : ''}
+        <div style="flex:1;min-width:0"><div class="name">${escapeHtml(p.name || '')}</div>${MS.showDescriptions !== false && p.description ? `<div class="cat" style="font-size:12px">${escapeHtml(p.description)}</div>` : ''}</div>
         <div class="right">
-          ${MS.showPrices !== false ? `<div class="price">${moneyCO(precioFinal(p))}${dsc > 0 ? ` <s style="font-size:11px;color:#999;font-weight:500">${moneyCO(p.precio)}</s>` : ''}</div>` : ''}
-          ${disponible ? `<button class="madd" data-add="${p.id}" aria-label="Agregar ${escapeHtml(p.nombre||'')}">+</button>` : ''}
+          ${MS.showPrices !== false ? `<div class="price">${moneyCO(precioFinal(p))}${dsc > 0 ? ` <s style="font-size:11px;color:#999;font-weight:500">${moneyCO(p.price)}</s>` : ''}</div>` : ''}
+          ${disponible ? `<button class="madd" data-add="${escapeHtml(p.id)}" aria-label="Agregar ${escapeHtml(p.name || '')}">+</button>` : ''}
         </div>`;
       mlist.appendChild(item);
-      if (disponible) {
-        item.querySelector('[data-add]').addEventListener('click', () => addToCart({ ...p, precio: precioFinal(p) }));
-      }
+      if (disponible) item.querySelector('[data-add]').addEventListener('click', () => addToCart({ id: p.id, nombre: p.name, precio: precioFinal(p) }));
     });
-
     primero = false;
   });
 
-  // Resalta la categoría visible al hacer scroll.
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(en => {
       if (en.isIntersecting) {
@@ -332,43 +298,28 @@ async function cargarMenu(){
   document.querySelectorAll('.mcat-title').forEach(t => observer.observe(t));
 }
 
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
-// ---------------- Carrito ----------------
-let cart = {}; // { productoId: { nombre, precio, cantidad } }
-
+// ---------------- Carrito (solo para mostrar el total estimado; el servidor recalcula) ----------------
+let cart = {};
 function addToCart(p){
   if (!cart[p.id]) cart[p.id] = { nombre: p.nombre, precio: p.precio, cantidad: 0 };
   cart[p.id].cantidad++;
   renderCart();
-  const bar = document.getElementById('cartBar');
-  bar.classList.add('show');
+  document.getElementById('cartBar').classList.add('show');
 }
-
 function changeQty(id, delta){
   if (!cart[id]) return;
   cart[id].cantidad += delta;
   if (cart[id].cantidad <= 0) delete cart[id];
   renderCart();
 }
-
-function cartTotal(){
-  return Object.values(cart).reduce((sum, it) => sum + it.precio * it.cantidad, 0);
-}
-function cartCount(){
-  return Object.values(cart).reduce((sum, it) => sum + it.cantidad, 0);
-}
-
+function cartTotal(){ return Object.values(cart).reduce((sum, it) => sum + it.precio * it.cantidad, 0); }
+function cartCount(){ return Object.values(cart).reduce((sum, it) => sum + it.cantidad, 0); }
 function renderCart(){
-  const count = cartCount();
-  const total = cartTotal();
+  const count = cartCount(), total = cartTotal();
   document.getElementById('cartCount').textContent = count;
   document.getElementById('cartTotalMini').textContent = moneyCO(total);
   document.getElementById('cartTotal').textContent = moneyCO(total);
   document.getElementById('cartBar').classList.toggle('show', count > 0);
-
   const rows = document.getElementById('cartRows');
   rows.innerHTML = '';
   Object.entries(cart).forEach(([id, it]) => {
@@ -380,9 +331,9 @@ function renderCart(){
         <div class="cprice">${moneyCO(it.precio)} c/u</div>
       </div>
       <div class="mstepper">
-        <button data-minus="${id}">−</button>
+        <button data-minus="${escapeHtml(id)}">−</button>
         <span>${it.cantidad}</span>
-        <button data-plus="${id}">+</button>
+        <button data-plus="${escapeHtml(id)}">+</button>
       </div>`;
     rows.appendChild(row);
   });
@@ -393,64 +344,44 @@ function renderCart(){
 document.getElementById('cartBar').addEventListener('click', () => openSheet());
 document.getElementById('sheetClose').addEventListener('click', () => closeSheet());
 document.getElementById('sheetBg').addEventListener('click', (e) => { if (e.target.id === 'sheetBg') closeSheet(); });
-
 function openSheet(){
   document.getElementById('cartView').style.display = 'block';
   document.getElementById('successView').style.display = 'none';
   document.getElementById('sheetBg').classList.add('show');
 }
-function closeSheet(){
-  document.getElementById('sheetBg').classList.remove('show');
-}
+function closeSheet(){ document.getElementById('sheetBg').classList.remove('show'); }
 
 document.getElementById('btnConfirmarPedido').addEventListener('click', async () => {
   const errEl = document.getElementById('pedidoErr');
   errEl.classList.remove('show');
-
   const nombre = document.getElementById('clienteNombre').value.trim();
   const telefono = document.getElementById('clienteTelefono').value.trim();
-
   if (cartCount() === 0) { errEl.textContent = 'Tu pedido está vacío.'; errEl.classList.add('show'); return; }
   if (!nombre) { errEl.textContent = 'Cuéntanos tu nombre para enviar el pedido.'; errEl.classList.add('show'); return; }
 
   const btn = document.getElementById('btnConfirmarPedido');
-  btn.disabled = true;
-  btn.textContent = 'Enviando...';
-
+  btn.disabled = true; btn.textContent = 'Enviando...';
   try {
-    const items = Object.entries(cart).map(([id, it]) => ({
-      productoId: id, nombre: it.nombre, precio: it.precio, cantidad: it.cantidad
-    }));
-    const docRef = await addDoc(collection(db, 'negocios', negocioId, 'pedidos'), {
-      mesa: mesa || 'Sin mesa',
-      clienteNombre: nombre,
-      clienteTelefono: telefono || '',
-      items,
-      total: cartTotal(),
-      estado: 'nuevo',
-      creado: serverTimestamp(),
-    });
-
+    const items = Object.entries(cart).map(([id, it]) => ({ product_id: id, quantity: it.cantidad }));
+    const { data, error } = await sb.rpc('place_order', { p_slug: slug, p_table: mesa || null, p_name: nombre, p_phone: telefono || null, p_items: items });
+    if (error) throw error;
     document.getElementById('successMsg').textContent =
-      `Pedido #${docRef.id.slice(-4).toUpperCase()} · Mesa ${mesa || '—'} · ${moneyCO(cartTotal())}. Tu pedido ya está en camino a cocina.`;
+      `Pedido #${data.code} · Mesa ${mesa || '—'} · ${moneyCO(data.total)}. Tu pedido ya está en camino a cocina.`;
     document.getElementById('cartView').style.display = 'none';
     document.getElementById('successView').style.display = 'block';
-
-    cart = {};
-    renderCart();
+    cart = {}; renderCart();
   } catch (e) {
     console.error(e);
     errEl.textContent = 'No pudimos enviar tu pedido. Revisa tu conexión e intenta de nuevo.';
     errEl.classList.add('show');
   } finally {
-    btn.disabled = false;
-    btn.textContent = 'Confirmar pedido';
+    btn.disabled = false; btn.textContent = 'Confirmar pedido';
   }
 });
-
 document.getElementById('btnCerrarExito').addEventListener('click', () => closeSheet());
 
 cargarMenu();
+
 </script>
 </body>
 </html>
