@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Conoce a KARTTA</title>
-<link rel="icon" type="image/png" href="/favicon%20(2).png">
-<link rel="icon" href="/favicon%20(2).ico" sizes="any">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="icon" href="/favicon.ico" sizes="any">
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -76,7 +76,7 @@ textarea{resize:vertical;min-height:90px;line-height:1.5;}
 @keyframes spin{to{transform:rotate(360deg);}}
 #saving p{color:var(--gray);}
 </style>
-<script type="module" src="firebase-init.js"></script>
+<script type="module" src="supabase-init.js"></script>
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="shortcut icon" href="/favicon.ico">
 </head>
@@ -202,50 +202,33 @@ textarea{resize:vertical;min-height:90px;line-height:1.5;}
 </div>
 
 <script type="module">
-import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { sb } from "./supabase-init.js";
 
 const TOTAL_STEPS = 9;
 let current = 0;
-let db, negocioId, uid, userEmail;
+let rid, uid, userEmail;
 
 const respuestas = {
   nombre: '', negocio: '', tipo: '', descripcion: '',
   telefono: '', whatsapp: '', ciudad: '', nombrePanel: '', oferta: '', metas: []
 };
 
-function esperarFirebase(intentos){
-  return new Promise((resolve, reject) => {
-    const check = () => {
-      if (window.KARTTA_AUTH && getApps().length) return resolve();
-      if (intentos <= 0) return reject();
-      intentos--; setTimeout(check, 200);
-    };
-    check();
-  });
-}
-
 async function iniciar(){
-  try { await esperarFirebase(20); } catch { window.location.href = 'kartta.html'; return; }
-  db = getFirestore(getApps()[0]);
-
   window.KARTTA_AUTH.onChange(async (user) => {
-    if (!user) { window.location.href = 'kartta.html'; return; }
+    if (!user) { window.location.href = 'index.html'; return; }
+    if (uid === user.uid) return;
     uid = user.uid;
     userEmail = user.email;
 
-    const perfilSnap = await getDoc(doc(db, 'usuarios', user.uid));
-    if (!perfilSnap.exists()) { window.location.href = 'kartta.html'; return; }
-    negocioId = perfilSnap.data().negocioId;
+    const mem = await sb.from('restaurant_members').select('restaurant_id').eq('user_id', uid).order('created_at').limit(1);
+    if (!mem.data || !mem.data.length) { window.location.href = 'index.html'; return; }
+    rid = mem.data[0].restaurant_id;
 
-    const negocioSnap = await getDoc(doc(db, 'negocios', negocioId));
-    if (negocioSnap.exists() && negocioSnap.data().onboardingCompleted) {
-      window.location.href = 'dashboard.html';
-      return;
-    }
+    const r = await sb.from('restaurants').select('name,onboarding_completed').eq('id', rid).single();
+    if (r.data && r.data.onboarding_completed) { window.location.href = 'dashboard.html'; return; }
 
     // Prellenar con lo que ya sabemos
-    if (negocioSnap.exists()) document.getElementById('q_negocio').value = negocioSnap.data().nombre || '';
+    if (r.data) document.getElementById('q_negocio').value = r.data.name || '';
     document.getElementById('q_nombre').value = user.displayName || '';
 
     document.getElementById('gate').classList.add('hidden');
@@ -356,36 +339,34 @@ function validar(step){
 async function finalizar(){
   document.getElementById('saving').classList.add('show');
   try {
-    // Auto-reparación: cuentas creadas antes de corregir las reglas pueden
-    // no tener su membresía "owner" creada. La creamos aquí si falta —
-    // las reglas ya lo permiten porque es el propio dueño creando su registro.
-    const miembroRef = doc(db, 'negocios', negocioId, 'miembros', uid);
-    try {
-      await setDoc(miembroRef, { rol: 'owner', email: userEmail || '', desde: serverTimestamp() });
-    } catch (e) {
-      // Si ya existía, Firestore lo trata como "update" y las reglas lo bloquean
-      // a propósito (nadie cambia su propio rol) — eso es justo lo esperado,
-      // significa que ya eras miembro. Cualquier otro error sí lo mostramos.
-      if (e.code !== 'permission-denied') throw e;
-    }
+    // El restaurante se publica al terminar para que el QR y el menú público funcionen desde el primer día.
+    const r1 = await sb.from('restaurants').update({
+      name: respuestas.negocio,
+      business_type: respuestas.tipo.slice(0, 60),
+      description: respuestas.descripcion.slice(0, 1000),
+      public_phone: respuestas.telefono.slice(0, 30),
+      whatsapp: (respuestas.whatsapp || '').slice(0, 30) || null,
+      city: respuestas.ciudad.slice(0, 100),
+      onboarding_completed: true,
+      is_published: true,
+    }).eq('id', rid);
+    if (r1.error) throw r1.error;
 
-    await setDoc(doc(db, 'negocios', negocioId), {
-      nombre: respuestas.negocio,
-      tipoNegocio: respuestas.tipo,
-      descripcion: respuestas.descripcion,
-      telefono: respuestas.telefono,
-      whatsapp: respuestas.whatsapp,
-      ciudad: respuestas.ciudad,
-      oferta: respuestas.oferta,
-      objetivos: respuestas.metas,
-      onboardingCompleted: true,
-      onboardingCompletedAt: serverTimestamp(),
-    }, { merge: true });
+    const r2 = await sb.from('restaurant_private').upsert({
+      restaurant_id: rid,
+      owner_name: respuestas.nombre.slice(0, 120),
+      contact_email: (userEmail || '').slice(0, 254),
+      contact_phone: respuestas.telefono.slice(0, 30),
+      offer: respuestas.oferta.slice(0, 500),
+      goals: respuestas.metas.slice(0, 10),
+    });
+    if (r2.error) throw r2.error;
 
-    await setDoc(doc(db, 'usuarios', uid), {
-      nombre: respuestas.nombre,
-      nombrePanel: respuestas.nombrePanel,
-    }, { merge: true });
+    const r3 = await sb.from('profiles').update({
+      full_name: respuestas.nombre.slice(0, 120),
+      panel_name: respuestas.nombrePanel.slice(0, 80),
+    }).eq('id', uid);
+    if (r3.error) throw r3.error;
 
     window.location.href = 'dashboard.html';
   } catch (e) {
