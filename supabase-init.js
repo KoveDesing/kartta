@@ -195,4 +195,59 @@ window.KARTTA_AUTH = {
   },
 };
 
+
+/**
+ * KARTTA Images AI
+ * La clave de OpenAI nunca pasa por el navegador; la generación se ejecuta en una Edge Function.
+ * Uso desde la UI:
+ * window.KARTTA_IMAGE_AI.generate({ restaurantId, image: file, style, instructions })
+ */
+const KARTTA_IMAGE_STYLES = Object.freeze({
+  "estudio-blanco": "Estudio blanco",
+  "ilustracion-2d": "Ilustración 2D",
+  "cinematografico": "Cinematográfico",
+  "publicidad-premium": "Publicidad premium",
+  "lujo-minimalista": "Lujo minimalista",
+  "editorial": "Fotografía editorial",
+});
+
+async function generateKarttaProductImage({ restaurantId, image, style, instructions = "" }) {
+  if (!restaurantId) throw codeError("invalid_restaurant", "Selecciona el restaurante antes de generar.");
+  if (!(image instanceof File)) throw codeError("image_required", "Selecciona una imagen.");
+  if (!["image/jpeg", "image/png", "image/webp"].includes(image.type)) {
+    throw codeError("unsupported_image_type", "Usa una imagen JPG, PNG o WebP.");
+  }
+  if (image.size <= 0 || image.size > 10 * 1024 * 1024) {
+    throw codeError("image_size_invalid", "La imagen debe pesar menos de 10 MB.");
+  }
+  if (!Object.hasOwn(KARTTA_IMAGE_STYLES, style)) {
+    throw codeError("invalid_style", "Selecciona uno de los estilos disponibles.");
+  }
+
+  const form = new FormData();
+  form.append("restaurant_id", restaurantId);
+  form.append("style", style);
+  form.append("image", image, image.name || "product-image");
+  if (instructions) form.append("instructions", String(instructions).slice(0, 500));
+
+  const { data, error } = await sb.functions.invoke("generate-product-image", { body: form });
+  if (error) {
+    let payload = null;
+    try {
+      if (error.context && typeof error.context.json === "function") payload = await error.context.json();
+    } catch (_) {}
+    const code = payload?.error || error.name || "image_generation_failed";
+    throw codeError(code, payload?.message || error.message || "No se pudo generar la imagen.");
+  }
+  if (!data?.success) {
+    throw codeError(data?.error || "image_generation_failed", data?.message || "No se pudo generar la imagen.");
+  }
+  return data; // { image_url, storage_path, generation_id, remaining_today, daily_limit }
+}
+
+window.KARTTA_IMAGE_AI = Object.freeze({
+  styles: KARTTA_IMAGE_STYLES,
+  generate: generateKarttaProductImage,
+});
+
 console.log("[KARTTA] Supabase conectado. window.KARTTA_AUTH está activo.");
