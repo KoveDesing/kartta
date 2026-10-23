@@ -270,6 +270,7 @@ async function applyKarttaGeneratedImage({ restaurantId, generationId, productId
 window.KARTTA_IMAGE_AI = Object.freeze({
   styles: KARTTA_IMAGE_STYLES,
   generate: generateKarttaProductImage,
+  applyToProduct: applyKarttaGeneratedImage,
 });
 
 console.log("[KARTTA] Supabase conectado. window.KARTTA_AUTH está activo.");
