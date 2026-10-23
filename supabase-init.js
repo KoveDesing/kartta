@@ -245,6 +245,28 @@ async function generateKarttaProductImage({ restaurantId, image, style, instruct
   return data; // { image_url, storage_path, generation_id, remaining_today, daily_limit }
 }
 
+
+async function applyKarttaGeneratedImage({ restaurantId, generationId, productId }) {
+  if (!restaurantId || !generationId || !productId) {
+    throw codeError("invalid_ids", "Falta seleccionar el restaurante, la imagen generada o el producto.");
+  }
+  const { data, error } = await sb.functions.invoke("apply-generated-product-image", {
+    body: { restaurant_id: restaurantId, generation_id: generationId, product_id: productId },
+  });
+  if (error) {
+    let payload = null;
+    try {
+      if (error.context && typeof error.context.json === "function") payload = await error.context.json();
+    } catch (_) {}
+    throw codeError(payload?.error || error.name || "image_apply_failed",
+      payload?.message || error.message || "No se pudo aplicar la imagen al producto.");
+  }
+  if (!data?.success) {
+    throw codeError(data?.error || "image_apply_failed", data?.message || "No se pudo aplicar la imagen.");
+  }
+  return data; // { image_path, image_url, product_id }
+}
+
 window.KARTTA_IMAGE_AI = Object.freeze({
   styles: KARTTA_IMAGE_STYLES,
   generate: generateKarttaProductImage,
